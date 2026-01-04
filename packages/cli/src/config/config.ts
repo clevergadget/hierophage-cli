@@ -83,9 +83,9 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
   const rawArgv = hideBin(process.argv);
   const yargsInstance = yargs(rawArgv)
     .locale('en')
-    .scriptName('gemini')
+    .scriptName('hierophage')
     .usage(
-      'Usage: gemini [options] [command]\n\nGemini CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
+      'Usage: hierophage [options] [command]\n\nHierophage CLI - Launch an interactive CLI, use -p/--prompt for non-interactive mode',
     )
 
     .option('debug', {
@@ -94,7 +94,7 @@ export async function parseArguments(settings: Settings): Promise<CliArgs> {
       description: 'Run in debug mode?',
       default: false,
     })
-    .command('$0 [query..]', 'Launch Gemini CLI', (yargsInstance) =>
+    .command('$0 [query..]', 'Launch Hierophage CLI', (yargsInstance) =>
       yargsInstance
         .positional('query', {
           description:
