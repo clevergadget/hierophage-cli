@@ -1,5 +1,13 @@
 # Gemini CLI
 
+## HIEROPHAGE CLI FORWARD BASE
+
+Commands! To get changes and rebuild git pull npm install npm run bundle npm
+install -g
+
+To pull changes from official Gemini CLI and merge them git fetch upstream git
+merge upstream/main npm install npm run bundle npm install -g
+
 [![Gemini CLI CI](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml)
 [![Gemini CLI E2E (Chained)](https://github.com/google-gemini/gemini-cli/actions/workflows/chained_e2e.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/chained_e2e.yml)
 [![Version](https://img.shields.io/npm/v/@google/gemini-cli)](https://www.npmjs.com/package/@google/gemini-cli)
