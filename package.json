@@ -69,7 +69,7 @@
     }
   },
   "bin": {
-    "gemini": "bundle/gemini.js"
+    "hierophage": "bundle/hierophage.js"
   },
   "files": [
     "bundle/",
