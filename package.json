@@ -55,6 +55,8 @@
     "preflight": "npm run clean && npm ci && npm run format && npm run lint:ci && npm run build && npm run typecheck && npm run test:ci",
     "prepare": "husky && npm run bundle",
     "postinstall": "node .hierophage/setup.js",
+    "hierophage:install": "node .hierophage/install-profiles.js",
+    "hierophage:install:force": "node .hierophage/install-profiles.js --force",
     "prepare:package": "node scripts/prepare-package.js",
     "release:version": "node scripts/version.js",
     "telemetry": "node scripts/telemetry.js",
@@ -74,6 +76,7 @@
   },
   "files": [
     "bundle/",
+    ".hierophage/",
     "README.md",
     "LICENSE"
   ],

@@ -60,6 +60,50 @@ For full CLI documentation (commands, authentication, MCP servers, etc.), see th
 
 ---
 
+## Profiles
+
+Hierophage supports multiple profiles for radically different use cases:
+
+| Profile | Description |
+|---------|-------------|
+| `vanilla` | Standard gemini-cli (default) |
+| `bare` | No system prompt—raw model |
+| `ritual` | Institutional ritual system |
+| `kawazu` | Simple learning assistant |
+
+### Setup Profiles
+
+```bash
+npm run hierophage:install   # Copy templates to ~/.hierophage/
+```
+
+### Select a Profile
+
+```bash
+hierophage --profile ritual     # Use ritual profile
+hierophage -P kawazu            # Use kawazu profile
+hierophage -P bare              # No system prompt
+hierophage                      # Default (vanilla)
+```
+
+### Profile Resolution Priority
+
+1. `--profile` / `-P` command line flag
+2. `HIEROPHAGE_PROFILE` environment variable
+3. `.hierophage/profile` file in current directory
+4. Default from `~/.hierophage/profiles.json`
+
+### Customize Profiles
+
+Edit `~/.hierophage/profiles.json` to define profiles. Each profile can specify:
+- `systemPrompt`: Path to custom system.md, `"default"`, or `"none"`
+- `promptSections`: Toggle individual gemini-cli prompt sections
+- `settings`: Override CLI settings
+
+See `docs/profile-system-spec.md` for full documentation.
+
+---
+
 ## Staying Updated with Upstream
 
 ```bash
