@@ -15,7 +15,8 @@
       "Bash(chmod:*)",
       "Bash(npm install:*)",
       "Bash(hierophage:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
