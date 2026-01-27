@@ -12,76 +12,36 @@ upstream updates, the `package.json` bin entry gets overwritten, breaking the
 defined in package.json, and it points to a wrapper that calls the underlying gemini
 binary. This allows upstream merges without command conflicts.
 
-### Setup (Automatic for new cloners)
+### Setup
 
-When cloning hierophage-cli, the setup is automatic:
+**Requirements**: Node.js 20+
 
 ```bash
 git clone https://github.com/clevergadget/hierophage-cli
 cd hierophage-cli
-npm install  # Automatically runs: npm run bundle, sets up upstream remote, installs globally
+npm install              # Sets up upstream remote and builds
+npm install -g           # Make 'hierophage' globally available
 ```
 
-The `postinstall` hook in package.json:
-- Runs `.hierophage/setup.js` to add the upstream remote (if not already present)
+The `postinstall` hook automatically:
+- Adds the upstream remote (if not already present)
 - Runs `npm run bundle` to build the CLI
-
-### Manual Setup (if needed)
-
-If you need to manually set up:
-
-```bash
-# Add upstream remote (or run: node .hierophage/setup.js)
-git remote add upstream https://github.com/google-gemini/gemini-cli.git
-
-# Build and install
-npm run bundle
-npm install -g
-```
-
-### Wrapper Script Content
-
-File: `.hierophage/bin/hierophage.js`
-```javascript
-#!/usr/bin/env node
-// Wrapper that calls the gemini binary with custom behavior
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Point to the actual gemini binary in bundle/
-const geminiBinary = join(__dirname, '../../bundle/gemini.js');
-
-const child = spawn('node', [geminiBinary, ...process.argv.slice(2)], {
-  stdio: 'inherit',
-  env: { ...process.env }
-});
-
-process.exitCode = await new Promise((resolve) => {
-  child.on('exit', resolve);
-});
-```
 
 ### Daily Workflow
 
 ```bash
-# Make your changes to prompts/config
+# Make changes, commit
 git add .
-git commit -m "Custom hierophage changes"
+git commit -m "Your changes"
 
-# Get upstream updates without breaking hierophage
+# Pull upstream updates (wrapper survives intact)
 git fetch upstream
 git merge upstream/main
 npm install
-npm run bundle
 npm install -g
 ```
 
-The `.hierophage/` directory stays intact during merges, and `hierophage` command
-continues to work with your customizations layered on top of the latest gemini-cli.
+The `.hierophage/` directory persists through upstream merges, keeping your customizations intact.
 
 [![Gemini CLI CI](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml)
 [![Gemini CLI E2E (Chained)](https://github.com/google-gemini/gemini-cli/actions/workflows/chained_e2e.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/chained_e2e.yml)
