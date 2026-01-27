@@ -170,9 +170,34 @@ function applyProfile(profile, env) {
 }
 
 /**
+ * Handle hierophage subcommands (prompts, etc.)
+ */
+async function handleSubcommand(args) {
+  if (args[0] === 'prompts' && args[1] === 'sync') {
+    // Delegate to prompts-sync.js
+    const syncScript = join(__dirname, 'prompts-sync.js');
+    const child = spawn('node', [syncScript, ...args.slice(2)], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+    return new Promise((resolve) => child.on('exit', resolve));
+  }
+  return null; // Not a subcommand
+}
+
+/**
  * Main entry point
  */
 async function main() {
+  const rawArgs = process.argv.slice(2);
+
+  // Check for hierophage-specific subcommands first
+  const subcommandResult = await handleSubcommand(rawArgs);
+  if (subcommandResult !== null) {
+    process.exitCode = subcommandResult;
+    return;
+  }
+
   const { profileName: cliProfile, remainingArgs } = parseArgs(process.argv);
   const envProfile = process.env.HIEROPHAGE_PROFILE;
   const projectProfile = findProjectProfile(process.cwd());
