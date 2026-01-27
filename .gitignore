@@ -56,3 +56,6 @@ patch_output.log
 
 .genkit
 .gemini-clipboard/
+
+# Hierophage: disable GitHub Actions and commit hooks
+.github/workflows/

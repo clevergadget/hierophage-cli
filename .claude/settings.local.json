@@ -10,7 +10,12 @@
       "Bash(npm run bundle:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(git fetch:*)",
+      "Bash(chmod:*)",
+      "Bash(npm install:*)",
+      "Bash(hierophage:*)",
+      "Bash(test:*)"
     ]
   }
 }
