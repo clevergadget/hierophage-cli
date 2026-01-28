@@ -2,8 +2,8 @@
 /**
  * hierophage prompts sync
  *
- * LLM-assisted semantic merge of upstream prompts with user preferences.
- * Creates a PR for review instead of writing directly.
+ * Merges upstream prompt changes with user customizations.
+ * Preserves exact wording where specified in preferences.md.
  *
  * Usage:
  *   hierophage prompts sync --profile kawazu
@@ -11,9 +11,9 @@
  */
 
 import { spawn, execSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
-import { homedir } from 'os';
+import { homedir, tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +21,6 @@ const __dirname = dirname(__filename);
 
 // Paths
 const REPO_ROOT = join(__dirname, '../..');
-const UPSTREAM_PROMPTS = join(REPO_ROOT, 'packages/core/src/core/prompts.ts');
 const GEMINI_BINARY = join(REPO_ROOT, 'bundle/hierophage.js');
 const PROFILES_DIR = join(REPO_ROOT, '.hierophage/profiles');
 
@@ -34,6 +33,7 @@ function parseArgs(argv) {
     profile: null,
     dryRun: false,
     help: false,
+    skipExtract: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -44,6 +44,8 @@ function parseArgs(argv) {
       result.profile = arg.slice('--profile='.length);
     } else if (arg === '--dry-run' || arg === '-n') {
       result.dryRun = true;
+    } else if (arg === '--skip-extract') {
+      result.skipExtract = true;
     } else if (arg === '--help' || arg === '-h') {
       result.help = true;
     }
@@ -57,7 +59,7 @@ function parseArgs(argv) {
  */
 function showHelp() {
   console.log(`
-hierophage prompts sync - Semantic merge of upstream prompts with user preferences
+hierophage prompts sync - Merge upstream prompts with user customizations
 
 Usage:
   hierophage prompts sync --profile <name> [options]
@@ -65,17 +67,15 @@ Usage:
 Options:
   --profile, -p <name>  Profile to sync (required)
   --dry-run, -n         Show generated content without creating PR
+  --skip-extract        Use cached vanilla instead of extracting fresh
   --help, -h            Show this help
 
-Example:
-  hierophage prompts sync --profile kawazu
-  hierophage prompts sync --profile kawazu --dry-run
-
 The command:
-  1. Reads upstream prompts from packages/core/src/core/prompts.ts
-  2. Reads preferences from .hierophage/profiles/<name>/preferences.md
-  3. Uses LLM to generate merged system.md
-  4. Creates a PR with the changes for review
+  1. Extracts current vanilla prompt from gemini-cli
+  2. Reads your preferences.md (with exact text to preserve)
+  3. Reads your current system.md
+  4. Uses LLM to merge, preserving your exact wording
+  5. Creates a PR with the changes
 `);
 }
 
@@ -102,6 +102,51 @@ function run(cmd, options = {}) {
     }
     return null;
   }
+}
+
+/**
+ * Extract vanilla prompt by running gemini-cli with GEMINI_WRITE_SYSTEM_MD
+ */
+async function extractVanilla() {
+  const tempFile = join(tmpdir(), `hierophage-vanilla-${Date.now()}.md`);
+
+  console.log('Extracting vanilla prompt from gemini-cli...');
+  console.log('(This makes a minimal API call to trigger prompt generation)\n');
+
+  return new Promise((resolve, reject) => {
+    const child = spawn('node', [GEMINI_BINARY, '-p', 'Say only: OK'], {
+      env: {
+        ...process.env,
+        GEMINI_WRITE_SYSTEM_MD: tempFile,
+        // Ensure no profile overrides
+        GEMINI_SYSTEM_MD: undefined,
+        HIEROPHAGE_PROFILE: undefined,
+      },
+      cwd: REPO_ROOT,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stderr = '';
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code) => {
+      if (existsSync(tempFile)) {
+        try {
+          const content = readFileSync(tempFile, 'utf-8');
+          unlinkSync(tempFile);
+          resolve(content);
+        } catch (error) {
+          reject(new Error(`Failed to read extracted prompt: ${error.message}`));
+        }
+      } else {
+        reject(new Error(`Vanilla extraction failed. Check authentication.\n${stderr}`));
+      }
+    });
+
+    child.on('error', reject);
+  });
 }
 
 /**
@@ -139,46 +184,109 @@ async function callLLM(prompt) {
 }
 
 /**
- * Build the merge prompt
+ * Build the merge prompt - this is the critical part
  */
-function buildMergePrompt(upstreamPrompts, preferences, currentSystemMd) {
-  return `You are helping merge upstream prompt changes with user preferences.
+function buildMergePrompt(vanillaPrompt, currentUserPrompt, preferences) {
+  return `You are helping merge upstream prompt changes with a user's customizations.
 
-## Task
-Generate a complete system.md file that:
-1. Incorporates the latest upstream prompt structure and improvements
-2. Applies the user's stated preferences
-3. Resolves conflicts in favor of user preferences (except for safety/security)
+## Your Task
 
-## Upstream Prompts (current vanilla gemini-cli prompts.ts)
+Generate a new system.md that:
+1. Uses the NEW VANILLA PROMPT as the structural base
+2. Applies the user's EXACT TEXT where specified (copy verbatim, do not paraphrase)
+3. Applies semantic preferences for sections not explicitly specified
+4. Removes sections the user has marked for removal
 
-The following is the TypeScript file that generates the default system prompt.
-Extract the relevant prompt text and structure from it.
+## CRITICAL: Exact Text Preservation
 
-\`\`\`typescript
-${upstreamPrompts}
+The user's preferences.md contains sections marked "Exact Text to Preserve" with text in code blocks.
+You MUST use this text EXACTLY as written - same words, same punctuation, same formatting.
+Do NOT paraphrase, reword, or "improve" this text. Copy it character-for-character.
+
+## Example (Fictional)
+
+To illustrate the merge process:
+
+**Vanilla prompt excerpt:**
+\`\`\`
+# Preamble
+You are an AI assistant designed to help with coding tasks.
+
+# Guidelines
+- **Proactiveness:** Take initiative to solve problems completely.
+- **Comments:** Add comments where helpful.
 \`\`\`
 
-## User Preferences
+**User's preferences.md excerpt:**
+\`\`\`
+## Exact Text to Preserve
+### Preamble
+\\\`\\\`\\\`
+You are a thoughtful coding partner who explains before acting.
+\\\`\\\`\\\`
 
-The following describes how this user wants their prompt to differ from vanilla:
+### Comments Policy
+\\\`\\\`\\\`
+- **Comments:** Focus on *why*, not *what*. Never use comments to talk to the user.
+\\\`\\\`\\\`
 
+## Structural Changes
+### Remove "Proactiveness" bullet
+Remove the proactiveness guideline entirely.
+\`\`\`
+
+**Expected merged output:**
+\`\`\`
+# Preamble
+You are a thoughtful coding partner who explains before acting.
+
+# Guidelines
+- **Comments:** Focus on *why*, not *what*. Never use comments to talk to the user.
+\`\`\`
+
+Notice: The preamble and comments text are copied EXACTLY from preferences (not paraphrased), and "Proactiveness" is removed entirely.
+
+---
+
+## Input 1: NEW VANILLA PROMPT (upstream baseline)
+
+This is what the current gemini-cli generates. Use this as your structural template.
+
+<vanilla_prompt>
+${vanillaPrompt}
+</vanilla_prompt>
+
+## Input 2: USER'S CURRENT PROMPT (what they have now)
+
+This shows how the user has customized things. Preserve their customizations.
+
+<current_user_prompt>
+${currentUserPrompt || '(No current prompt - generating fresh from preferences)'}
+</current_user_prompt>
+
+## Input 3: USER'S PREFERENCES
+
+This defines what to change and what exact text to use.
+
+<preferences>
 ${preferences}
-
-## Current system.md (if any, for reference)
-
-${currentSystemMd || '(none - generating fresh)'}
+</preferences>
 
 ## Output Instructions
 
-Output ONLY the final system.md content:
-- No code fences
-- No explanations or preamble
-- Just the complete, ready-to-use system prompt markdown
-- Include all sections (Core Mandates, Primary Workflows, Operational Guidelines, etc.)
-- Apply the user's preferences throughout
+Generate ONLY the final system.md content:
+- No code fences around the output
+- No explanations or commentary
+- Just the complete system prompt, ready to use
 
-Generate the system.md now:`;
+The output should be a complete system prompt that:
+- Has the structure of the vanilla prompt (sections, ordering)
+- Uses the user's EXACT TEXT where they've specified it
+- Removes sections they've marked for removal
+- Incorporates their semantic preferences
+- Keeps all safety/security content from vanilla
+
+Generate the merged system.md now:`;
 }
 
 /**
@@ -197,7 +305,7 @@ function getGitHubUser() {
 /**
  * Create branch, commit, push, and create PR
  */
-function createPR(profile, systemMdPath, newContent, currentContent) {
+function createPR(profile, systemMdPath, newContent) {
   const timestamp = new Date().toISOString().slice(0, 10);
   const branchName = `prompts-sync/${profile}-${timestamp}`;
   const currentBranch = run('git rev-parse --abbrev-ref HEAD');
@@ -225,9 +333,10 @@ function createPR(profile, systemMdPath, newContent, currentContent) {
 
     const commitMsg = `Sync ${profile} profile prompts with upstream
 
-Regenerated system.md by applying ${profile}/preferences.md to current upstream prompts.ts.
+Merged upstream prompt changes while preserving user customizations.
+Exact text from preferences.md was preserved verbatim.
 
-This is an automated sync - please review the changes carefully.`;
+This is an automated sync - please review carefully.`;
 
     run(`git commit -m "${commitMsg}"`);
 
@@ -239,15 +348,19 @@ This is an automated sync - please review the changes carefully.`;
     console.log('  Creating PR...');
     const prBody = `## Prompts Sync: ${profile}
 
-This PR updates the \`${profile}\` profile's system.md by applying its preferences to the current upstream prompts.
+This PR merges upstream prompt changes with the ${profile} profile's customizations.
 
-### What changed
-- Regenerated \`system.md\` from current \`prompts.ts\` + \`preferences.md\`
+### What happened
+- Extracted current vanilla prompt from gemini-cli
+- Applied exact text from \`preferences.md\` (preserved verbatim)
+- Applied semantic preferences
+- Removed sections marked for removal
 
 ### Review checklist
-- [ ] Preferences are correctly applied
-- [ ] No upstream improvements were incorrectly excluded
-- [ ] Safety/security guidance is preserved
+- [ ] Exact text from preferences.md appears verbatim (not paraphrased)
+- [ ] Structural changes (removed sections) are correct
+- [ ] New upstream features are included where appropriate
+- [ ] Safety/security content is preserved
 
 ---
 *Generated by \`hierophage prompts sync\`*`;
@@ -262,11 +375,9 @@ This PR updates the \`${profile}\` profile's system.md by applying its preferenc
     return prUrl;
 
   } catch (error) {
-    // Try to recover - switch back to original branch
     try {
       run(`git checkout ${currentBranch}`, { throws: false });
     } catch {}
-
     throw error;
   }
 }
@@ -291,6 +402,7 @@ async function main() {
   const profileDir = join(PROFILES_DIR, args.profile);
   const preferencesPath = join(profileDir, 'preferences.md');
   const systemMdPath = join(profileDir, 'system.md');
+  const vanillaCachePath = join(profileDir, 'vanilla-cache.md');
 
   // Check prerequisites
   if (!existsSync(profileDir)) {
@@ -300,16 +412,10 @@ async function main() {
 
   if (!existsSync(preferencesPath)) {
     console.error(`Error: Preferences file not found: ${preferencesPath}`);
-    console.error('Create a preferences.md file describing your customizations.');
     process.exit(1);
   }
 
-  if (!existsSync(UPSTREAM_PROMPTS)) {
-    console.error(`Error: Upstream prompts not found: ${UPSTREAM_PROMPTS}`);
-    process.exit(1);
-  }
-
-  // Check gh is available
+  // Check gh is available for PR creation
   if (!args.dryRun) {
     const ghUser = getGitHubUser();
     if (!ghUser) {
@@ -321,17 +427,33 @@ async function main() {
 
   console.log(`Syncing profile: ${args.profile}`);
   console.log(`  Preferences: ${preferencesPath}`);
-  console.log(`  Output: ${systemMdPath}`);
+  console.log(`  Output: ${systemMdPath}\n`);
 
-  // Read inputs
-  const upstreamPrompts = readFile(UPSTREAM_PROMPTS);
-  const preferences = readFile(preferencesPath);
-  const currentSystemMd = readFile(systemMdPath);
-
-  if (!upstreamPrompts) {
-    console.error('Error: Could not read upstream prompts');
-    process.exit(1);
+  // Get vanilla prompt
+  let vanillaPrompt;
+  if (args.skipExtract && existsSync(vanillaCachePath)) {
+    console.log('Using cached vanilla prompt...\n');
+    vanillaPrompt = readFile(vanillaCachePath);
+  } else {
+    try {
+      vanillaPrompt = await extractVanilla();
+      // Cache it
+      writeFileSync(vanillaCachePath, vanillaPrompt);
+      console.log(`Vanilla prompt extracted (${vanillaPrompt.length} chars)\n`);
+    } catch (error) {
+      console.error('Failed to extract vanilla prompt:', error.message);
+      if (existsSync(vanillaCachePath)) {
+        console.log('Falling back to cached vanilla...');
+        vanillaPrompt = readFile(vanillaCachePath);
+      } else {
+        process.exit(1);
+      }
+    }
   }
+
+  // Read other inputs
+  const preferences = readFile(preferencesPath);
+  const currentUserPrompt = readFile(systemMdPath);
 
   if (!preferences) {
     console.error('Error: Could not read preferences');
@@ -339,31 +461,33 @@ async function main() {
   }
 
   // Build merge prompt
-  const mergePrompt = buildMergePrompt(upstreamPrompts, preferences, currentSystemMd);
+  const mergePrompt = buildMergePrompt(vanillaPrompt, currentUserPrompt, preferences);
 
-  console.log('\nCalling LLM to generate merged system.md...');
+  console.log('Calling LLM to merge prompts...');
+  console.log('(This may take a moment)\n');
 
   try {
     const newSystemMd = await callLLM(mergePrompt);
 
     if (!newSystemMd || newSystemMd.length < 100) {
       console.error('Error: LLM returned empty or too short response');
-      console.error('Response was:', newSystemMd);
       process.exit(1);
     }
 
-    console.log(`\nGenerated ${newSystemMd.length} characters`);
+    console.log(`Generated merged prompt (${newSystemMd.length} chars)`);
 
     if (args.dryRun) {
-      console.log('\n--- Generated system.md ---\n');
+      console.log('\n' + '='.repeat(60));
+      console.log('GENERATED SYSTEM.MD (dry run)');
+      console.log('='.repeat(60) + '\n');
       console.log(newSystemMd);
-      console.log('\n--- End ---');
-      console.log('\n(dry run - no PR created)');
+      console.log('\n' + '='.repeat(60));
+      console.log('(dry run - no PR created)');
       process.exit(0);
     }
 
     // Create PR
-    const prUrl = createPR(args.profile, systemMdPath, newSystemMd, currentSystemMd);
+    const prUrl = createPR(args.profile, systemMdPath, newSystemMd);
 
     console.log('\nDone! Review and merge the PR to apply changes.');
     console.log('After merging, run: npm run hierophage:install');

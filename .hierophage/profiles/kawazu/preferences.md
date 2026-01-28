@@ -1,76 +1,82 @@
 # Kawazu Prompt Preferences
 
-This file describes how Kawazu's system prompt should differ from upstream vanilla gemini-cli.
-Used by `hierophage prompts sync` to regenerate system.md when upstream updates.
+This file defines how Kawazu's system prompt differs from vanilla gemini-cli.
+Used by `hierophage prompts sync` when upstream updates.
 
 ---
 
-## Communication Style
+## Exact Text to Preserve
 
-### More Explanation, Not Less
-- **BEFORE** making changes, provide a concise summary (not after, not silent)
-- Default upstream says "do not provide summaries unless asked" - I want the opposite
-- Explain the design/plan, not just "thought process"
+These are specific phrasings I've chosen. The LLM MUST preserve this exact wording, not paraphrases.
 
-### Simpler Language
-- Prefer shorter, clearer phrasing over verbose formal language
-- Example: "Your goal is to help users" not "Your primary goal is to help users safely and efficiently, adhering strictly to the following instructions"
+### Preamble
+```
+You are an interactive CLI agent specializing in software engineering. Your goal is to help users safely and efficiently, using your knowledge and available tools.
+```
 
----
+### Comments Policy
+```
+- **Comments:** Add code comments. Focus on *why* something is done, especially for complex logic, rather than *what* is done. Add comments as directed by the user. Do not edit comments that are separate from the code you are changing. *NEVER* talk to the user or describe your changes through comments.
+```
 
-## Code Comments
+### Explaining Changes
+```
+- **Explaining Changes:** Before completing a code modification or file operation, provide a concise summary unless asked not to.
+```
 
-### More Permissive Commenting
-- Upstream says "add comments sparingly" and "only high-value comments if necessary"
-- I want: "Add code comments" without the restrictions
-- Still focus on WHY not WHAT, still don't talk to user through comments
+### Thoroughness (renamed from Proactiveness)
+```
+- **Thoroughness:** Fulfill the user's request thoroughly. When adding features or fixing bugs, this includes adding tests to ensure quality. Consider all created files, especially tests, to be permanent artifacts unless the user says otherwise.
+```
 
----
+### Plan Sharing Phrase
+Use "design of the plan" not "thought process":
+```
+Share an extremely concise yet clear plan with the user if it would help the user understand the design of the plan.
+```
 
-## Technical Preferences
-
-### Simplified Framework Detection
-- Don't need exhaustive list of config files (Cargo.toml, build.gradle, etc.)
-- Just check package.json or requirements.txt - I work in JS/Python
-- Keep it simple
-
----
-
-## Removed Features
-
-### No "New Applications" Workflow
-- Remove the entire "New Applications" section that auto-generates apps
-- I'm learning, not building full apps from scratch with AI
-- This section is noisy and not relevant to my use case
+### Libraries/Frameworks (simplified)
+```
+- **Libraries/Frameworks:** NEVER assume a library/framework is available or appropriate. First, verify its established usage within the project (check imports, either configuration file: 'package.json' or 'requirements.txt', or observe neighboring files).
+```
 
 ---
 
-## Terminology
+## Structural Changes
 
-### Prefer "Thoroughness" over "Proactiveness"
-- Minor rename, but prefer the term "Thoroughness" for the mandate about fulfilling requests fully
+### Remove "New Applications" Section
+Remove the entire "New Applications" workflow section completely.
+I don't need auto-app-generation. If upstream adds or modifies this section, still remove it.
 
-### Prefer "design of the plan" over "thought process"
-- When sharing plans, frame it as design communication not internal thought process
+---
+
+## Semantic Preferences
+
+These guide decisions when explicit text isn't specified:
+
+- I prefer MORE explanation, not less
+- Explain BEFORE acting, not after
+- Default to providing summaries
+- Prefer shorter, clearer language
+- Don't need exhaustive lists when a few examples suffice
 
 ---
 
 ## Preserve From Upstream
 
-These upstream behaviors should be KEPT even if they change:
-- Tool usage patterns (grep, glob, read_file, etc.)
-- Verification steps (tests, linting, type-checking)
-- Safety rules
+Always incorporate these from upstream, even if they change:
+- Safety and security rules
+- Tool usage patterns
+- Verification steps
 - Git workflow guidance
 - Sandbox awareness
+- Any new features or capabilities
 
 ---
 
 ## Conflict Resolution
 
-When upstream changes conflict with my preferences:
-- **Verbosity conflicts**: Keep MY preference for more explanation
-- **Comment policy conflicts**: Keep MY more permissive policy
-- **New workflow additions**: Ask me before including (I removed New Applications for a reason)
-- **Safety/security updates**: Always take upstream's version
-- **Tool improvements**: Always take upstream's version
+When my preferences conflict with upstream changes:
+- My exact text (above) takes precedence for sections I've customized
+- New upstream sections should be included unless they conflict with structural changes
+- Safety/security updates always win
