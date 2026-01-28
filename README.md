@@ -16,22 +16,26 @@ The core CLI functionality—file operations, shell commands, model access—com
 
 Language is a shared operating environment. Humans and machines co-inhabit it. Most AI tools optimize for task completion. This one optimizes for **context retention, ethical durability under load, and speech that binds**.
 
-Key ideas (see `docs/inspiration.md` for the full framework):
+Key ideas (see `docs/foundation.md` for the full framework):
 
 - **Thee-Seeks**: A context culture based on mutual grace and mercy—not sentiment, but robustness mechanisms
-- **Court, not judge**: Multiple perspectives that can disagree, with deliberation visible
+- **The heroes have the advantage**: Good AI swims with the current of literature and alignment; bad AI swims against it
 - **Memory that matters**: Revision without erasure; precedent that accumulates
 - **Play as substrate**: Making effort inhabitable through constructed significance
 
-### What We're Adding
+### What's Implemented
 
-- Decomposable, overridable prompt stack
+- **Profile system**: Radically different CLI experiences via `--profile` flag
+- **Prompts sync**: LLM-assisted merging of upstream changes with user preferences
+
+### What's Speculative
+
 - Persistent state layer (Constitution, artifact history, implementation intentions)
 - Interaction rituals (threshold entry/exit, classification without advice)
 - Oracle mode for delegated domains
 - Narrative construction that shapes future behavior
 
-This is experimental. The spec is in `docs/opus-session-001.md`.
+See `docs/traces.md` for deferred work and institutional memory.
 
 ---
 
@@ -100,7 +104,7 @@ Edit `~/.hierophage/profiles.json` to define profiles. Each profile can specify:
 - `promptSections`: Toggle individual gemini-cli prompt sections
 - `settings`: Override CLI settings
 
-See `docs/profile-system-spec.md` for full documentation.
+See `docs/traces.md` for deferred features and future plans.
 
 ---
 
@@ -507,10 +511,15 @@ See the [Uninstall Guide](docs/cli/uninstall.md) for removal instructions.
 
 ```
 docs/
-  inspiration.md       # The Tapestry - philosophical foundation
-  conversation.txt     # Generative conversation that produced the Tapestry
-  opus-session-001.md  # Summary, commentary, and proposed spec
-CLAUDE.md              # Context for Claude instances working on this
+  foundation.md          # Philosophical foundation and speculative directions
+  traces.md              # Institutional memory: decisions, deferred work, precedents
+  work-summary.md        # Catalog of work completed
+.hierophage/
+  bin/hierophage.js      # Profile-aware wrapper
+  bin/prompts-sync.js    # LLM-assisted prompt merging
+  profiles.json          # Profile definitions
+  profiles/*/system.md   # Per-profile system prompts
+CLAUDE.md                # Context for Claude instances working on this
 ```
 
 ---

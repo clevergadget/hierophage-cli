@@ -4,11 +4,11 @@
 
 Hierophage-CLI is a fork of [gemini-cli](https://github.com/google-gemini/gemini-cli) being transformed into something different: a **minimal institution for emergent judgment** rather than a productivity tool.
 
-The core CLI functionality remains gemini-cli. What we're building lives in the prompt stack, the persistent state layer, and the interaction rituals.
+The core CLI functionality remains gemini-cli. What we're building lives in the prompt stack, the profile system, and the persistent state layer.
 
 ## The Philosophical Foundation
 
-Read `docs/inspiration.md` for the full Tapestry document. Key premises:
+Read `docs/foundation.md` for the full document. Key premises:
 
 1. **Language is a shared operating environment.** Humans and machines co-inhabit it. Every utterance modifies conditions for future utterances.
 
@@ -22,27 +22,51 @@ Read `docs/inspiration.md` for the full Tapestry document. Key premises:
 
 6. **Persuasion everywhere.** Language always persuades. We take responsibility for that fact rather than pretending neutrality.
 
-## The Psychological Framework
+## What's Implemented
 
-The system draws on:
+### Profile System
 
-- **Predictive Processing** — Helping rebuild predictive confidence through externalized deliberation
-- **ACT's Defusion** — Making thoughts objects of observation through classification
-- **Implementation Intentions** — "If X, then Y" pre-planning to reduce cognitive load
-- **Narrative Identity** — The story the system constructs about the user shapes future behavior
+The CLI supports radically different experiences via `--profile`:
 
-## What We're Building
+```bash
+hierophage --profile ritual    # Institutional ritual system
+hierophage --profile kawazu    # Simple learning assistant
+hierophage --profile bare      # No system prompt - raw model
+hierophage                     # Default (vanilla gemini-cli)
+```
 
-See `docs/opus-session-001.md` for the full spec. High-level components:
+Profile resolution: CLI flag > env var (`HIEROPHAGE_PROFILE`) > project file > default.
 
-1. **The Living Constitution** — Prompt stack as evolving document with precedent
-2. **The Court Architecture** — Multiple offices (Recorder, Advocate, Witness, Archivist) that can disagree
-3. **The Threshold Engine** — Ritualized entry/exit; the CLI as place, not tool
-4. **The Classification Engine** — Categorizing self-reports without judgment or advice
-5. **The Artifact History** — Revision without erasure; everything significant is recorded
-6. **Implementation Intentions Registry** — If-then commitments as first-class objects
-7. **The Oracle Mode** — Direct imperatives for delegated domains (health, habits, logistics)
-8. **Narrative Construction** — The system actively builds a story of who the user is
+**Key files:**
+- `.hierophage/bin/hierophage.js` — Wrapper handling profile resolution
+- `.hierophage/profiles.json` — Profile definitions
+- `.hierophage/profiles/*/system.md` — Per-profile system prompts
+
+### Prompts Sync
+
+LLM-assisted merging of upstream prompt changes with user customizations:
+
+```bash
+hierophage prompts sync --profile kawazu --dry-run
+```
+
+Reads `preferences.md` (exact text to preserve, structural changes) and generates merged `system.md` honoring both upstream and user preferences.
+
+**Key files:**
+- `.hierophage/bin/prompts-sync.js` — Sync implementation
+- `.hierophage/profiles/kawazu/preferences.md` — Example preferences
+
+## Speculative Directions (Not Yet Built)
+
+From `docs/foundation.md`:
+
+- **The Living Constitution** — Prompt stack as evolving document with precedent
+- **The Court Architecture** — Multiple offices (Recorder, Advocate, Witness, Archivist) that can disagree
+- **The Threshold Engine** — Ritualized entry/exit; the CLI as place, not tool
+- **The Classification Engine** — Categorizing self-reports without judgment or advice
+- **Implementation Intentions Registry** — If-then commitments as first-class objects
+- **The Oracle Mode** — Direct imperatives for delegated domains
+- **Narrative Construction** — The system actively builds a story of who the user is
 
 ## How to Work on This
 
@@ -60,23 +84,23 @@ See `docs/opus-session-001.md` for the full spec. High-level components:
 
 ## Key Files
 
-- `docs/inspiration.md` — The Tapestry (philosophical foundation)
-- `docs/conversation.txt` — The generative conversation that produced the Tapestry
-- `docs/opus-session-001.md` — Summary, commentary, and proposed spec from first Opus session
+- `docs/foundation.md` — Philosophical foundation and speculative directions
+- `docs/traces.md` — Institutional memory: decisions made, work deferred, precedents set
+- `docs/work-summary.md` — Catalog of work completed
+- `.hierophage/` — All hierophage-specific code and configuration
 
 ## The Fork Relationship
 
-99% of the code is gemini-cli. We're not rewriting the CLI—we're transforming what it does through:
+The codebase is gemini-cli. We're transforming what it does through:
 
-- Decomposing and making the prompt stack overridable
-- Adding persistent state (Constitution, artifacts, intentions registry)
-- Building interaction rituals into the prompt layer
-- Eventually: custom modes (WOOP, Oracle, etc.)
+- Profile system for switchable prompt stacks
+- LLM-assisted prompt sync for upstream compatibility
+- Eventually: persistent state, interaction rituals, custom modes
 
-When pulling upstream updates, the `.hierophage/` directory and custom prompt configuration should persist. The `hierophage` command is maintained via wrapper script.
+When pulling upstream updates, the `.hierophage/` directory and custom prompt configuration persist. The `hierophage` command is maintained via wrapper script.
 
 ## A Note on This Document
 
 This CLAUDE.md is itself an artifact of the system we're building. It establishes precedent for how future Claude instances should approach the work.
 
-If you're reading this in a future session: check `docs/` for any new session logs. The project evolves through accumulated precedent, not static specification.
+If you're reading this in a future session: check `docs/` for session logs and updates. The project evolves through accumulated precedent, not static specification.
