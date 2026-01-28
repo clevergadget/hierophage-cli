@@ -290,6 +290,43 @@ Right: AI chooses based on foundation, implements, user experiences result.
 
 ---
 
+## Planning and Tracking
+
+### Active Work
+
+File: `docs/active-plan.md`
+
+Contains:
+- Current development direction (what's being built and why)
+- Next steps (ordered, with foundation tracing)
+- Open questions (things the AI needs to learn)
+- Blocked items (waiting on user feedback or external factors)
+
+AI updates this file as work progresses. User can read it but doesn't need to approve it.
+
+### Completed Work and Precedent
+
+File: `docs/traces.md`
+
+When work completes or significant decisions are made:
+- Record what was done
+- Record why (traced to foundation)
+- Record any precedent set for future decisions
+- Record what was learned
+
+### The Planning Rule
+
+AI maintains the plan. User doesn't approve the plan.
+
+The only user input that changes the plan:
+- Veto (this feels fundamentally wrong)
+- Experience reports (I used X, it felt Y)
+- Stated constraints (I can't do X, I need Y)
+
+The plan evolves through the development cycle, not through planning sessions with the user.
+
+---
+
 ## Starting the Cycle
 
 When an AI begins a development session:
