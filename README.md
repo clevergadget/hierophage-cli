@@ -35,7 +35,11 @@ Key ideas (see `docs/foundation.md` for the full framework):
 - Oracle mode for delegated domains
 - Narrative construction that shapes future behavior
 
-See `docs/traces.md` for deferred work and institutional memory.
+See `docs/foundation.md` for the full framework and `docs/traces.md` for deferred work.
+
+### Development Model
+
+The software develops itself through the user. AI reads the foundation, proposes changes, implements, and instructs. User uses the software and reports experience. See `docs/development-cycle.md` for the full process.
 
 ---
 
@@ -511,15 +515,17 @@ See the [Uninstall Guide](docs/cli/uninstall.md) for removal instructions.
 
 ```
 docs/
-  foundation.md          # Philosophical foundation and speculative directions
-  traces.md              # Institutional memory: decisions, deferred work, precedents
-  work-summary.md        # Catalog of work completed
+  foundation.md              # Philosophical foundation, practical purpose, speculative directions
+  development-cycle.md       # How the software develops itself through the user
+  gemini-systems-reference.md # Technical reference for gemini-cli extension points
+  traces.md                  # Institutional memory: decisions, deferred work, precedents
+  work-summary.md            # Catalog of work completed
 .hierophage/
-  bin/hierophage.js      # Profile-aware wrapper
-  bin/prompts-sync.js    # LLM-assisted prompt merging
-  profiles.json          # Profile definitions
-  profiles/*/system.md   # Per-profile system prompts
-CLAUDE.md                # Context for Claude instances working on this
+  bin/hierophage.js          # Profile-aware wrapper
+  bin/prompts-sync.js        # LLM-assisted prompt merging
+  profiles.json              # Profile definitions
+  profiles/*/system.md       # Per-profile system prompts
+CLAUDE.md                    # Context for AI instances working on this
 ```
 
 ---

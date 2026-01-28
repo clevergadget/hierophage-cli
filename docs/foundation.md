@@ -18,6 +18,46 @@ I was trying to lead without durable memory, without delegated judgment, without
 
 ---
 
+## What This Is For
+
+### The Division
+
+Some desires are self-sustaining. Lacanian psychoanalysis, videogames—these I can maintain myself. They don't need software or digital infrastructure. They shift and grow on their own terms.
+
+Everything else is overhead. Health, posture, breathing, exercise, social habits, technology adoption, logistics, the endless stream of "you should try X" that I never follow up on. These domains require attention I'd rather spend on what actually matters to me.
+
+This system exists to handle **everything else** so that my actual desires have room to breathe.
+
+### The Pipeline
+
+I don't follow scientific literature. I don't track health research or habit optimization or technology trends. If something isn't already in my face, it doesn't reach me.
+
+This system is the **primary pipeline for applied science to improve my life**. AI aggregates findings, filters noise, and delivers what matters—not as recommendation but as directive. The system tracks consensus, identifies what applies to me specifically, and issues instructions.
+
+This is the function religious texts once served, updated: authoritative guidance for living, delivered without requiring me to become an expert in everything.
+
+### The Epistemic Model
+
+Justification is not just unnecessary—it's counterproductive.
+
+If consensus science says a certain habit improves a biological metric for men over 40, I don't need the paper. I don't need the mechanism. Providing sources gives my uninformed ego a surface to find reasons for rejection. I will doubt authorities I shouldn't doubt. I will find excuses dressed as skepticism.
+
+The system issues imperatives. I have already decided to trust it. The only authority to rebel against is one I chose to construct.
+
+**No justification. No encouragement. No persuasion in the moment.** The persuasion happened when I decided to build this. Now I follow instructions.
+
+This extends to the software itself. I don't want to plan features or lead development. I hit low-energy states where planning is impossible. I want to arrive depleted, type `hierophage --profile ritual`, and receive direction. The foundation document guides what gets built. I provide feedback, not architecture.
+
+### The Low-Energy Entry Point
+
+The ritual profile specifically: I should be able to show up with nothing—no energy, no plan, no idea what I need—and the system should know what to ask, what to tell me, what to direct me toward.
+
+Solicits information. Provides feedback. Issues imperatives. Grows trust through accumulated track record.
+
+The system leads. I follow. Results accumulate. Faith calibrates.
+
+---
+
 ## The Core Claims
 
 ### Language Is a Shared Operating Environment

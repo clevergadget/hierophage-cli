@@ -84,10 +84,22 @@ From `docs/foundation.md`:
 
 ## Key Files
 
-- `docs/foundation.md` — Philosophical foundation and speculative directions
+- `docs/foundation.md` — Philosophical foundation, the practical division, speculative directions
+- `docs/development-cycle.md` — How the software develops itself through the user (read this before proposing changes)
+- `docs/gemini-systems-reference.md` — Technical reference for gemini-cli extension points
 - `docs/traces.md` — Institutional memory: decisions made, work deferred, precedents set
 - `docs/work-summary.md` — Catalog of work completed
 - `.hierophage/` — All hierophage-specific code and configuration
+
+## How Development Works
+
+**Read `docs/development-cycle.md` for the full process.** Summary:
+
+- The foundation document is constitutional authority
+- AI proposes and implements; user uses and reports experience
+- User may propose but is never required to lead
+- All features use gemini-cli extension points (hooks, MCP, skills, commands) to survive upstream merges
+- Technical decisions don't require user approval; experience feedback drives iteration
 
 ## The Fork Relationship
 
