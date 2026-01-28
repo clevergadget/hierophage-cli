@@ -98,9 +98,9 @@ export class MockTool extends BaseDeclarativeTool<
       options.description ?? options.name,
       Kind.Other,
       options.params,
+      options.messageBus ?? createMockMessageBus(),
       options.isOutputMarkdown ?? false,
       options.canUpdateOutput ?? false,
-      options.messageBus ?? createMockMessageBus(),
     );
 
     if (options.shouldConfirmExecute) {
@@ -123,6 +123,8 @@ export class MockTool extends BaseDeclarativeTool<
   protected createInvocation(
     params: { [key: string]: unknown },
     messageBus: MessageBus,
+    _toolName?: string,
+    _toolDisplayName?: string,
   ): ToolInvocation<{ [key: string]: unknown }, ToolResult> {
     return new MockToolInvocation(this, params, messageBus);
   }
@@ -134,6 +136,7 @@ export const MOCK_TOOL_SHOULD_CONFIRM_EXECUTE = () =>
     title: 'Confirm mockTool',
     command: 'mockTool',
     rootCommand: 'mockTool',
+    rootCommands: ['mockTool'],
     onConfirm: async () => {},
   });
 
@@ -205,9 +208,9 @@ export class MockModifiableTool
         type: 'object',
         properties: { param: { type: 'string' } },
       },
+      createMockMessageBus(),
       true,
       false,
-      createMockMessageBus(),
     );
   }
 
@@ -229,6 +232,8 @@ export class MockModifiableTool
   protected createInvocation(
     params: Record<string, unknown>,
     messageBus: MessageBus,
+    _toolName?: string,
+    _toolDisplayName?: string,
   ): ToolInvocation<Record<string, unknown>, ToolResult> {
     return new MockModifiableToolInvocation(this, params, messageBus);
   }
