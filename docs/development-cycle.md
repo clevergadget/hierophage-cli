@@ -327,6 +327,24 @@ The plan evolves through the development cycle, not through planning sessions wi
 
 ---
 
+## Deploying Changes
+
+Different changes require different deployment steps:
+
+| Change Type | What to Do |
+|-------------|------------|
+| **Code changes** (`.hierophage/bin/*.js`, wrapper scripts) | `npm install -g` from repo root |
+| **Profile/prompt changes** (`profiles/*/system.md`) | Copy to `~/.hierophage/profiles/` or run `npm run hierophage:install` |
+| **Documentation** | No rebuild needed |
+| **State files** (`~/.hierophage/state/*`) | Direct edit, read at runtime |
+
+**Before handing back to user for testing:**
+1. If code changed: `npm install -g`
+2. If prompts changed: sync to `~/.hierophage/`
+3. Confirm the change is deployed, not just committed
+
+---
+
 ## Starting the Cycle
 
 When an AI begins a development session:
