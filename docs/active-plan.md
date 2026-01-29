@@ -11,13 +11,16 @@
 ### Track 1: Ritual Profile (CLI)
 The ritual profile is the entry point for the feedback loop. User arrives (potentially depleted), system solicits information, builds understanding, issues directives.
 
-**Status: In testing. Persistence system implemented.**
+**Status: In testing. Habit tracking system implemented.**
 
 Recent work:
 - Added foundation summary to system prompt (model knows WHY)
 - Added self-monitoring checks (model verifies its own alignment)
 - Created MCP server for state persistence (guaranteed writes)
 - First intake session completed, user profile populated
+- Implemented directive types: one-time vs recurring (habits)
+- Added streak tracking for habit installation (21-day graduation threshold)
+- Two active habits now tracking: water (1/21), stretching (0/21)
 
 ### Track 2: Discord Bot ("The Emissary")
 Extends ritual profile beyond CLI. Bot initiates contact at variable times (anchor-relative, not clock-based), asks what's happening, issues directives. Addresses ADHD need for flexible, context-aware reminders.
@@ -48,6 +51,11 @@ Foundation traces:
 4. ~~**Populate user profile manually**~~ — Done. Intake data preserved.
 5. ~~**Add deploying changes section to SDLC**~~ — Done. Documents when npm install -g vs file sync needed.
 6. ~~**Write Discord bot spec**~~ — Done. See `docs/discord-bot-spec.md`.
+7. ~~**Implement habit tracking**~~ — Done. MCP server v1.1.0 with:
+   - Directive types: one-time vs recurring
+   - Streak tracking with 21-day graduation threshold
+   - New tools: `hierophage_record_habit_checkin`, `hierophage_graduate_habit`, `hierophage_get_active_habits`
+   - Updated system prompt with directive type explanation
 
 ---
 
@@ -56,7 +64,7 @@ Foundation traces:
 ### Ritual Profile (CLI)
 1. **Verify MCP persistence works** — User tests ritual profile, checks if state persists
 2. **Iterate based on feedback** — Adjust prompt, directive style based on experience reports
-3. **Add directive tracking over time** — Build patterns from compliance data
+3. **Build pattern analysis** — Analyze compliance data over time to calibrate directives
 
 ### Discord Bot (The Emissary)
 1. **Phase 1: Basic bot** — Discord connection, DM handling, AI integration, state persistence
@@ -93,7 +101,9 @@ Foundation traces:
 - Age: 43
 - Health: ADHD, bipolar, medications (Ritalin, Ambien, Lamictal)
 - Delegation: Broad scope, excludes things directly impacting girlfriend, THC for now
-- Current directive: Drink water upon waking (pending outcome report)
+- Active habits:
+  - Water upon waking (1/21 streak)
+  - Morning stretching (0/21 streak)
 
 ---
 

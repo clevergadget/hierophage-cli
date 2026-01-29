@@ -3,11 +3,10 @@
  * Hierophage State Management MCP Server
  *
  * Provides reliable persistence for the ritual profile.
- * Tools:
- * - hierophage_get_profile: Read current user profile
- * - hierophage_update_profile: Update profile fields (merges)
- * - hierophage_add_directive: Add a directive to history
- * - hierophage_add_session_note: Add a note to session history
+ *
+ * Directive types:
+ * - one-time: Complete once, done forever
+ * - recurring: Habit being installed, tracks streaks until graduated
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -22,6 +21,9 @@ import { homedir } from 'os';
 
 const STATE_DIR = path.join(homedir(), '.hierophage', 'state');
 const PROFILE_PATH = path.join(STATE_DIR, 'user-profile.json');
+
+// Default streak threshold for habit graduation
+const DEFAULT_GRADUATION_THRESHOLD = 21;
 
 // Ensure state directory exists
 if (!fs.existsSync(STATE_DIR)) {
@@ -60,7 +62,7 @@ function deepMerge(target, source) {
 }
 
 const server = new Server(
-  { name: 'hierophage-state', version: '1.0.0' },
+  { name: 'hierophage-state', version: '1.1.0' },
   { capabilities: { tools: {} } }
 );
 
@@ -69,7 +71,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: 'hierophage_get_profile',
-      description: 'Get the current user profile. Returns all stored information about the user including identity, delegation scope, preferences, directive history, and session history.',
+      description: 'Get the current user profile. Returns all stored information about the user including identity, delegation scope, preferences, directive history, active habits, and session history.',
       inputSchema: {
         type: 'object',
         properties: {},
@@ -92,13 +94,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'hierophage_add_directive',
-      description: 'Add a new directive to the directive history. Use this whenever you issue a directive to the user.',
+      description: 'Add a new directive. For one-time directives, tracks completion. For recurring directives (habits), tracks streaks until the habit is installed.',
       inputSchema: {
         type: 'object',
         properties: {
           directive: {
             type: 'string',
             description: 'The exact text of the directive issued'
+          },
+          type: {
+            type: 'string',
+            enum: ['one-time', 'recurring'],
+            description: 'one-time: complete once. recurring: habit being installed, tracks streaks.'
+          },
+          frequency: {
+            type: 'string',
+            enum: ['daily', 'weekly', 'custom'],
+            description: 'For recurring directives: how often it should be done. Defaults to daily.'
           },
           context: {
             type: 'string',
@@ -107,14 +119,45 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           notes: {
             type: 'string',
             description: 'Optional notes about the directive'
+          },
+          graduation_threshold: {
+            type: 'number',
+            description: 'For recurring: streak count needed to consider habit installed. Defaults to 21.'
           }
         },
         required: ['directive']
       }
     },
     {
+      name: 'hierophage_record_habit_checkin',
+      description: 'Record a check-in for a recurring directive (habit). Use this when the user reports on whether they did their habit today.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          directive_id: {
+            type: 'string',
+            description: 'The ID of the recurring directive'
+          },
+          done: {
+            type: 'boolean',
+            description: 'Whether the user did the habit (true) or missed it (false)'
+          },
+          notes: {
+            type: 'string',
+            description: 'Optional notes about this check-in'
+          },
+          classification: {
+            type: 'string',
+            enum: ['success', 'fear', 'fatigue', 'ambiguity', 'resentment', 'misalignment', 'incoherence'],
+            description: 'Classification (especially useful for misses)'
+          }
+        },
+        required: ['directive_id', 'done']
+      }
+    },
+    {
       name: 'hierophage_update_directive_outcome',
-      description: 'Update the outcome of a previously issued directive. Use this when the user reports on whether they completed a directive.',
+      description: 'Update the outcome of a ONE-TIME directive. For recurring directives, use hierophage_record_habit_checkin instead.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -138,6 +181,33 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           }
         },
         required: ['directive_id', 'outcome']
+      }
+    },
+    {
+      name: 'hierophage_graduate_habit',
+      description: 'Mark a recurring directive as graduated (habit installed). Use when the user has reached the streak threshold or the habit feels automatic.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          directive_id: {
+            type: 'string',
+            description: 'The ID of the recurring directive to graduate'
+          },
+          notes: {
+            type: 'string',
+            description: 'Notes about the graduation'
+          }
+        },
+        required: ['directive_id']
+      }
+    },
+    {
+      name: 'hierophage_get_active_habits',
+      description: 'Get all active recurring directives (habits being installed). Useful for check-ins.',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+        required: []
       }
     },
     {
@@ -214,20 +284,102 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           d.id && d.id.startsWith(`d_${dateStr}`)
         ).length + 1;
 
+        const type = args.type || 'one-time';
         const directive = {
           id: `d_${dateStr}_${String(count).padStart(3, '0')}`,
           issued_at: now.toISOString(),
           directive: args.directive,
+          type: type,
           context: args.context || '',
-          outcome: 'pending',
           notes: args.notes || ''
         };
+
+        if (type === 'one-time') {
+          directive.outcome = 'pending';
+        } else {
+          // Recurring directive - habit tracking
+          directive.frequency = args.frequency || 'daily';
+          directive.status = 'active';
+          directive.graduation_threshold = args.graduation_threshold || DEFAULT_GRADUATION_THRESHOLD;
+          directive.streak = {
+            current: 0,
+            longest: 0,
+            total_checkins: 0,
+            total_done: 0,
+            history: []
+          };
+        }
 
         profile.directive_history.push(directive);
         writeProfile(profile);
 
+        const typeLabel = type === 'recurring' ? 'Recurring directive (habit)' : 'One-time directive';
         return {
-          content: [{ type: 'text', text: `Directive recorded with ID: ${directive.id}` }]
+          content: [{ type: 'text', text: `${typeLabel} recorded with ID: ${directive.id}` }]
+        };
+      }
+
+      case 'hierophage_record_habit_checkin': {
+        const profile = readProfile();
+        if (!profile.directive_history) {
+          return {
+            content: [{ type: 'text', text: 'No directive history found.' }],
+            isError: true
+          };
+        }
+
+        const directive = profile.directive_history.find(d => d.id === args.directive_id);
+        if (!directive) {
+          return {
+            content: [{ type: 'text', text: `Directive ${args.directive_id} not found.` }],
+            isError: true
+          };
+        }
+
+        if (directive.type !== 'recurring') {
+          return {
+            content: [{ type: 'text', text: `Directive ${args.directive_id} is not a recurring directive. Use hierophage_update_directive_outcome instead.` }],
+            isError: true
+          };
+        }
+
+        const now = new Date();
+        const checkin = {
+          date: now.toISOString(),
+          done: args.done,
+          classification: args.classification || (args.done ? 'success' : 'unknown'),
+          notes: args.notes || ''
+        };
+
+        directive.streak.history.push(checkin);
+        directive.streak.total_checkins++;
+
+        if (args.done) {
+          directive.streak.current++;
+          directive.streak.total_done++;
+          if (directive.streak.current > directive.streak.longest) {
+            directive.streak.longest = directive.streak.current;
+          }
+        } else {
+          directive.streak.current = 0; // Reset streak on miss
+        }
+
+        directive.last_checkin = now.toISOString();
+
+        // Check for auto-graduation
+        let graduationNote = '';
+        if (directive.streak.current >= directive.graduation_threshold && directive.status === 'active') {
+          graduationNote = ` Streak has reached graduation threshold (${directive.graduation_threshold}). Consider graduating this habit.`;
+        }
+
+        writeProfile(profile);
+
+        const status = args.done ? 'Done' : 'Missed';
+        return {
+          content: [{
+            type: 'text',
+            text: `Check-in recorded: ${status}. Current streak: ${directive.streak.current}. Longest: ${directive.streak.longest}.${graduationNote}`
+          }]
         };
       }
 
@@ -248,6 +400,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
+        if (directive.type === 'recurring') {
+          return {
+            content: [{ type: 'text', text: `Directive ${args.directive_id} is a recurring directive. Use hierophage_record_habit_checkin instead.` }],
+            isError: true
+          };
+        }
+
         directive.outcome = args.outcome;
         directive.reported_at = new Date().toISOString();
         if (args.classification) directive.classification = args.classification;
@@ -257,6 +416,72 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         return {
           content: [{ type: 'text', text: `Directive ${args.directive_id} outcome updated to: ${args.outcome}` }]
+        };
+      }
+
+      case 'hierophage_graduate_habit': {
+        const profile = readProfile();
+        if (!profile.directive_history) {
+          return {
+            content: [{ type: 'text', text: 'No directive history found.' }],
+            isError: true
+          };
+        }
+
+        const directive = profile.directive_history.find(d => d.id === args.directive_id);
+        if (!directive) {
+          return {
+            content: [{ type: 'text', text: `Directive ${args.directive_id} not found.` }],
+            isError: true
+          };
+        }
+
+        if (directive.type !== 'recurring') {
+          return {
+            content: [{ type: 'text', text: `Directive ${args.directive_id} is not a recurring directive.` }],
+            isError: true
+          };
+        }
+
+        directive.status = 'graduated';
+        directive.graduated_at = new Date().toISOString();
+        directive.graduation_notes = args.notes || '';
+        directive.final_streak = directive.streak.current;
+
+        writeProfile(profile);
+
+        return {
+          content: [{
+            type: 'text',
+            text: `Habit graduated! "${directive.directive.substring(0, 50)}..." is now installed. Final streak: ${directive.final_streak}. Total successful check-ins: ${directive.streak.total_done}/${directive.streak.total_checkins}.`
+          }]
+        };
+      }
+
+      case 'hierophage_get_active_habits': {
+        const profile = readProfile();
+        const activeHabits = (profile.directive_history || [])
+          .filter(d => d.type === 'recurring' && d.status === 'active');
+
+        if (activeHabits.length === 0) {
+          return {
+            content: [{ type: 'text', text: 'No active habits being tracked.' }]
+          };
+        }
+
+        const summary = activeHabits.map(h => ({
+          id: h.id,
+          directive: h.directive,
+          frequency: h.frequency,
+          current_streak: h.streak.current,
+          longest_streak: h.streak.longest,
+          graduation_threshold: h.graduation_threshold,
+          progress: `${h.streak.current}/${h.graduation_threshold}`,
+          last_checkin: h.last_checkin || 'never'
+        }));
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(summary, null, 2) }]
         };
       }
 
