@@ -1,0 +1,12 @@
+{
+  "name": "hierophage-mcp-servers",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MCP servers for Hierophage CLI",
+  "scripts": {
+    "state-server": "node state-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
