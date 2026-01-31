@@ -349,6 +349,15 @@ Different changes require different deployment steps:
 2. If prompts or MCP servers changed: `node .hierophage/install-profiles.js --force`
 3. Confirm the change is deployed, not just committed
 
+**Creating PRs with GitHub CLI:**
+```bash
+# Create PR and assign GitHub Copilot for code review
+gh pr create --title "Title" --body "Description" --add-reviewer @copilot
+
+# Or add Copilot to existing PR
+gh pr edit <number> --add-reviewer @copilot
+```
+
 ---
 
 ## Starting the Cycle

@@ -101,6 +101,18 @@ From `docs/foundation.md`:
 - All features use gemini-cli extension points (hooks, MCP, skills, commands) to survive upstream merges
 - Technical decisions don't require user approval; experience feedback drives iteration
 
+## Git and GitHub Workflow
+
+When creating PRs, use GitHub CLI with Copilot for code review:
+
+```bash
+# Create PR and assign GitHub Copilot for review
+gh pr create --title "Title" --body "Description" --add-reviewer @copilot
+
+# Or add Copilot to existing PR
+gh pr edit <number> --add-reviewer @copilot
+```
+
 ## The Fork Relationship
 
 The codebase is gemini-cli. We're transforming what it does through:
