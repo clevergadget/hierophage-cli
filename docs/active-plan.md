@@ -11,7 +11,7 @@
 ### Track 1: Ritual Profile (CLI)
 The ritual profile is the entry point for the feedback loop. User arrives (potentially depleted), system solicits information, builds understanding, issues directives.
 
-**Status: In testing. Habit tracking system implemented.**
+**Status: Active. Habit tracking system working. 7 habits being tracked.**
 
 Recent work:
 - Added foundation summary to system prompt (model knows WHY)
@@ -20,7 +20,7 @@ Recent work:
 - First intake session completed, user profile populated
 - Implemented directive types: one-time vs recurring (habits)
 - Added streak tracking for habit installation (21-day graduation threshold)
-- Two active habits now tracking: water (1/21), stretching (0/21)
+- Updated install script to handle MCP server deployment and configuration
 
 ### Track 2: Discord Bot ("The Emissary")
 Extends ritual profile beyond CLI. Bot initiates contact at variable times (anchor-relative, not clock-based), asks what's happening, issues directives. Addresses ADHD need for flexible, context-aware reminders.
@@ -62,7 +62,7 @@ Foundation traces:
 ## Next Steps
 
 ### Ritual Profile (CLI)
-1. **Verify MCP persistence works** — User tests ritual profile, checks if state persists
+1. ~~**Verify MCP persistence works**~~ — Confirmed working, 7 habits tracking with streaks
 2. **Iterate based on feedback** — Adjust prompt, directive style based on experience reports
 3. **Build pattern analysis** — Analyze compliance data over time to calibrate directives
 
@@ -73,7 +73,7 @@ Foundation traces:
 4. **Phase 4: Polish** — CLI commands, setup wizard, error handling
 
 ### Infrastructure
-1. **Update install script** — Should copy MCP servers and run npm install
+1. ~~**Update install script**~~ — Done. Now copies MCP servers, runs npm install, configures gemini settings
 2. **Document MCP server setup** — Add to README or separate doc
 
 ---
@@ -81,7 +81,6 @@ Foundation traces:
 ## Known Issues
 
 - **Message duplication in ritual output** — Observed in first intake session. Likely gemini-cli display issue or model retry. Monitor.
-- **Install script doesn't handle MCP servers yet** — Manual setup required for now
 
 ---
 
@@ -101,9 +100,14 @@ Foundation traces:
 - Age: 43
 - Health: ADHD, bipolar, medications (Ritalin, Ambien, Lamictal)
 - Delegation: Broad scope, excludes things directly impacting girlfriend, THC for now
-- Active habits:
-  - Water upon waking (1/21 streak)
-  - Morning stretching (0/21 streak)
+- Active habits (7 total):
+  - Water upon waking (3/21 streak)
+  - Morning stretching (2/21 streak)
+  - Fiber and probiotic (2/21 streak)
+  - 10am/3pm screen-free walks (1/21 streak)
+  - Vitamin D, fish oil, multivitamin (1/21 streak)
+  - Square breathing (1/21 streak)
+  - Sensory mindfulness (0/21 streak)
 
 ---
 
@@ -114,11 +118,11 @@ Foundation traces:
 - `docs/active-plan.md` — This file
 - `docs/discord-bot-spec.md` — New: Discord bot specification
 - `.hierophage/profiles/ritual/system.md` — Foundation context, self-monitoring, MCP tools
-- `.hierophage/mcp-servers/state-server.js` — New: State management MCP server
-- `.hierophage/mcp-servers/package.json` — New: MCP server dependencies
-- `~/.hierophage/state/user-profile.json` — Populated with intake data
-- `~/.gemini/settings.json` — Added MCP server configuration
+- `.hierophage/mcp-servers/state-server.js` — State management MCP server v1.1.0 with habit tracking
+- `.hierophage/mcp-servers/package.json` — MCP server dependencies
+- `.hierophage/install-profiles.js` — Updated: Now handles MCP server installation and gemini config
+- `~/.hierophage/state/user-profile.json` — Populated with intake data, 7 active habits
 
 ---
 
-*Last updated: 2026-01-29*
+*Last updated: 2026-01-31*

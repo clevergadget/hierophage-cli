@@ -334,13 +334,19 @@ Different changes require different deployment steps:
 | Change Type | What to Do |
 |-------------|------------|
 | **Code changes** (`.hierophage/bin/*.js`, wrapper scripts) | `npm install -g` from repo root |
-| **Profile/prompt changes** (`profiles/*/system.md`) | Copy to `~/.hierophage/profiles/` or run `npm run hierophage:install` |
+| **Profile/prompt changes** (`profiles/*/system.md`) | Run `node .hierophage/install-profiles.js --force` |
+| **MCP server changes** (`.hierophage/mcp-servers/*`) | Run `node .hierophage/install-profiles.js --force` |
 | **Documentation** | No rebuild needed |
 | **State files** (`~/.hierophage/state/*`) | Direct edit, read at runtime |
 
+**Install script options:**
+- `node .hierophage/install-profiles.js` — Install new files only (skip existing)
+- `node .hierophage/install-profiles.js --force` — Overwrite all files
+- `node .hierophage/install-profiles.js --skip-npm` — Skip npm install in mcp-servers
+
 **Before handing back to user for testing:**
 1. If code changed: `npm install -g`
-2. If prompts changed: sync to `~/.hierophage/`
+2. If prompts or MCP servers changed: `node .hierophage/install-profiles.js --force`
 3. Confirm the change is deployed, not just committed
 
 ---

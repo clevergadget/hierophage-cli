@@ -27,12 +27,15 @@ Key ideas (see `docs/foundation.md` for the full framework):
 
 - **Profile system**: Radically different CLI experiences via `--profile` flag
 - **Prompts sync**: LLM-assisted merging of upstream changes with user preferences
+- **State persistence**: MCP server for institutional memory (user profiles, directive tracking)
+- **Habit tracking**: Streak-based system for installing recurring behaviors (21-day graduation)
+- **Ritual profile**: The primary entry point—issues directives, tracks compliance, classifies failure without shame
 
 ### What's Speculative
 
-- Persistent state layer (Constitution, artifact history, implementation intentions)
-- Interaction rituals (threshold entry/exit, classification without advice)
-- Oracle mode for delegated domains
+- Constitution and precedent system (formal decision records)
+- The Emissary (Discord bot for push-based check-ins)
+- Pattern analysis across compliance data
 - Narrative construction that shapes future behavior
 
 See `docs/foundation.md` for the full framework and `docs/traces.md` for deferred work.
@@ -109,6 +112,34 @@ Edit `~/.hierophage/profiles.json` to define profiles. Each profile can specify:
 - `settings`: Override CLI settings
 
 See `docs/traces.md` for deferred features and future plans.
+
+---
+
+## The Ritual Profile
+
+The ritual profile is the primary entry point for the hierophage system. It transforms the CLI into an institutional presence that:
+
+- **Issues directives** without justification (the persuasion happened before this session began)
+- **Tracks habits** with streak-based graduation (21 days default)
+- **Classifies failure** without shame (fear, fatigue, ambiguity, resentment, misalignment, incoherence)
+- **Accumulates memory** via MCP state server
+
+### First Use
+
+```bash
+npm run hierophage:install   # Install profiles and MCP servers
+hierophage --profile ritual  # Start the ritual session
+```
+
+On first use, the system enters **intake mode** to gather context (age, health, delegation scope). After intake, it issues your first directive.
+
+### Check-ins
+
+Return periodically. Report on your directives. The system tracks what works and what doesn't, calibrating future directives to your actual patterns.
+
+### State Persistence
+
+The ritual profile uses an MCP server for state persistence. User data lives in `~/.hierophage/state/user-profile.json`. The install script configures `~/.gemini/settings.json` automatically.
 
 ---
 
@@ -517,15 +548,22 @@ See the [Uninstall Guide](docs/cli/uninstall.md) for removal instructions.
 docs/
   foundation.md              # Philosophical foundation, practical purpose, speculative directions
   development-cycle.md       # How the software develops itself through the user
+  active-plan.md             # Current development direction (AI-maintained)
   gemini-systems-reference.md # Technical reference for gemini-cli extension points
   traces.md                  # Institutional memory: decisions, deferred work, precedents
-  work-summary.md            # Catalog of work completed
+  discord-bot-spec.md        # Spec for The Emissary (push-based check-ins)
 .hierophage/
   bin/hierophage.js          # Profile-aware wrapper
   bin/prompts-sync.js        # LLM-assisted prompt merging
+  install-profiles.js        # Install profiles and MCP servers to ~/.hierophage/
   profiles.json              # Profile definitions
   profiles/*/system.md       # Per-profile system prompts
+  mcp-servers/               # MCP servers for state persistence
+    state-server.js          # Profile, directive, and habit tracking
+    package.json             # MCP server dependencies
 CLAUDE.md                    # Context for AI instances working on this
+~/.hierophage/               # User's installed hierophage data (created by install script)
+  state/user-profile.json    # User profile and directive history (runtime data)
 ```
 
 ---
