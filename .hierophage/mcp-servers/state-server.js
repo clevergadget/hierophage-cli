@@ -344,6 +344,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+
+        // Check if there's already a check-in for today
+        const existingToday = directive.streak.history.find(h =>
+          h.date && h.date.startsWith(todayStr)
+        );
+        if (existingToday) {
+          return {
+            content: [{
+              type: 'text',
+              text: `Already checked in for this habit today (${existingToday.done ? 'done' : 'missed'}). Current streak: ${directive.streak.current}.`
+            }]
+          };
+        }
+
         const checkin = {
           date: now.toISOString(),
           done: args.done,

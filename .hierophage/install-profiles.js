@@ -36,17 +36,20 @@ function ensureDir(dir) {
 }
 
 function copyIfNotExists(src, dest, description) {
-  if (existsSync(dest) && !FORCE) {
+  const existedBefore = existsSync(dest);
+  if (existedBefore && !FORCE) {
     console.log(`Skipping (exists): ${description}`);
     return false;
   }
 
   ensureDir(dirname(dest));
   copyFileSync(src, dest);
-  console.log(`${FORCE && existsSync(dest) ? 'Overwrote' : 'Created'}: ${description}`);
+  console.log(`${FORCE && existedBefore ? 'Overwrote' : 'Created'}: ${description}`);
   return true;
 }
 
+// Note: This function only copies files in the immediate directory, not subdirectories.
+// This is intentional for the current use case (mcp-servers contains only flat files).
 function copyDirectory(srcDir, destDir, description) {
   if (!existsSync(srcDir)) {
     console.log(`Skipping (source not found): ${description}`);
