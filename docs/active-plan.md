@@ -100,14 +100,15 @@ Foundation traces:
 - Age: 43
 - Health: ADHD, bipolar, medications (Ritalin, Ambien, Lamictal)
 - Delegation: Broad scope, excludes things directly impacting girlfriend, THC for now
-- Active habits (7 total):
-  - Water upon waking (3/21 streak)
-  - Morning stretching (2/21 streak)
-  - Fiber and probiotic (2/21 streak)
-  - 10am/3pm screen-free walks (1/21 streak)
-  - Vitamin D, fish oil, multivitamin (1/21 streak)
-  - Square breathing (1/21 streak)
-  - Sensory mindfulness (0/21 streak)
+- Active habits (7 recurring + 1 one-time, as of 2026-02-02):
+  - Water upon waking (4/21 streak)
+  - Morning stretching (3/21 streak)
+  - Fiber and probiotic (3/21 streak)
+  - 10am/3pm screen-free walks (2/21 streak)
+  - Vitamin D, fish oil, multivitamin (2/21 streak)
+  - Square breathing (2/21 streak)
+  - Sensory mindfulness (1/21 streak)
+  - Judgment observation (one-time, 24 hours)
 
 ---
 
@@ -125,4 +126,4 @@ Foundation traces:
 
 ---
 
-*Last updated: 2026-01-31*
+*Last updated: 2026-02-02*

@@ -1,6 +1,6 @@
 # Hierophage-CLI: Work Summary
 
-*Generated 2026-01-28*
+*Last updated: 2026-02-02*
 
 This document catalogs the work completed on the hierophage-cli fork, reviewing all commits authored by Phillip Dodson <clevergadget@gmail.com>.
 
@@ -84,6 +84,63 @@ hierophage prompts sync --profile kawazu --dry-run  # Preview without PR
 4. Creates PR for review instead of writing directly
 5. Assigns PR to current GitHub user
 
+### MCP State Server (`.hierophage/mcp-servers/`)
+
+A Model Context Protocol server providing persistent state for the ritual profile:
+
+| File | Purpose |
+|------|---------|
+| `.hierophage/mcp-servers/state-server.js` | MCP server (~400 lines). Manages user profile, directives, habits, session notes. |
+| `.hierophage/mcp-servers/package.json` | Dependencies (@anthropic-ai/sdk, @modelcontextprotocol/sdk) |
+| `~/.hierophage/state/user-profile.json` | Runtime state file (not in repo) |
+
+**Tools provided:**
+
+| Tool | Purpose |
+|------|---------|
+| `hierophage_get_user_profile` | Load full profile at session start |
+| `hierophage_update_user_profile` | Update identity, delegation, preferences |
+| `hierophage_add_directive` | Record new directive (one-time or recurring) |
+| `hierophage_record_habit_checkin` | Log daily check-in for recurring habits |
+| `hierophage_graduate_habit` | Mark habit as graduated (21+ day streak) |
+| `hierophage_get_active_habits` | List active recurring directives |
+| `hierophage_add_session_note` | Record session summary |
+
+**State structure:**
+- `identity` — Age, health status, constraints, medications, living situation
+- `delegation` — Scope, approach, excluded domains
+- `current_habits` — Pre-existing routines
+- `preferences` — Directive style preferences
+- `directive_history` — All issued directives with outcomes/streaks
+- `session_history` — Session summaries for continuity
+- `system_notes` — AI self-monitoring observations
+
+### Habit Tracking System
+
+Directives are typed as `one-time` or `recurring`:
+
+**One-time directives:**
+- Single action or short-term commitment
+- Tracked with `outcome`: pending → completed/abandoned
+
+**Recurring directives (habits):**
+- Daily practices being installed
+- Streak tracking: current, longest, total check-ins, history array
+- Graduation threshold: 21 consecutive days
+- Check-in prevents same-day duplicates
+
+**Current active habits (as of 2026-02-02):**
+
+| Habit | Streak | Status |
+|-------|--------|--------|
+| Water upon waking | 4/21 | Active |
+| Morning stretching | 3/21 | Active |
+| Fiber and probiotic | 3/21 | Active |
+| 10am/3pm screen-free walks | 2/21 | Active |
+| Vitamin D, fish oil, multivitamin | 2/21 | Active |
+| Square breathing | 2/21 | Active |
+| Sensory mindfulness | 1/21 | Active |
+
 ---
 
 ## Infrastructure Changes
@@ -152,6 +209,19 @@ The spec proposes these components for future implementation:
 
 | Hash | Subject |
 |------|---------|
+| `f0da95d47` | Address Copilot review feedback |
+| `bdf7c7c99` | Document GitHub Copilot code review via CLI |
+| `9179db714` | Enhance install script with MCP server deployment |
+| `2f3f51c83` | Implement habit tracking for recurring directives |
+| `98f31c8c9` | Strengthen directive recording instruction with logical reasoning |
+| `016b534aa` | Update active-plan.md with session progress |
+| `f41177d1b` | Add state-server MCP to repo for installation |
+| `2ae1ac34f` | Add MCP-based state persistence for ritual profile |
+| `9bcb44747` | Add foundation context and self-monitoring to ritual profile |
+| `4c21d0c7e` | Add Discord bot spec (The Emissary) |
+| `817f4b09d` | Implement ritual profile intake system |
+| `16c1bda8b` | Add development cycle and technical reference docs |
+| `593bf7066` | Consolidate foundation docs, add institutional memory |
 | `f1af3adc9` | sync prompt process ready for testing |
 | `52d68d843` | Merge branch 'main' into phil/prompt-stack-decomposition |
 | `9810ecc3f` | Add prompts sync command for LLM-assisted profile merging |
@@ -161,7 +231,6 @@ The spec proposes these components for future implementation:
 | `23a62c0be` | Update Claude Code allowed tools for hierophage development |
 | `138d911ed` | Condense and clarify setup instructions |
 | `be4e9c319` | Disable commit checks and GitHub Actions for hierophage development |
-| `cb4c2870b` | Merge branch 'main' of https://github.com/clevergadget/hierophage-cli into main |
 | `78dceb8a2` | adding some commands to the readme |
 | `8663b7231` | original state for hierophage cli |
 | `730ce0f81` | Update CLI help text from 'Gemini' to 'Hierophage' |
@@ -191,12 +260,17 @@ The condensed document preserves the essential philosophical claims, personal co
 - `hierophage --profile <name>` selects different experiences
 - `hierophage prompts sync` can merge upstream changes with user preferences
 - Foundation documents establish philosophical and technical direction
+- MCP state server providing persistent user profile and directive tracking
+- Habit tracking with streaks, graduation thresholds (21 days)
+- Ritual profile actively in use with 7 habits being tracked
+- User intake completed, delegation scope established
+- Check-in ritual forming institutional relationship
 
-**What's next (per the spec):**
-- Persistent state architecture (Constitution, artifact history, intentions registry)
+**What's next (per the spec and active-plan.md):**
+- Discord bot ("The Emissary") for proactive check-ins — spec complete, implementation not started
+- Pattern analysis on compliance data to calibrate directives
 - Threshold Engine (entry/exit rituals)
 - Classification Engine
-- Oracle Mode for delegated domains
 - Court Architecture with multiple offices
 
 ---

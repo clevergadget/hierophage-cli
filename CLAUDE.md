@@ -56,6 +56,26 @@ Reads `preferences.md` (exact text to preserve, structural changes) and generate
 - `.hierophage/bin/prompts-sync.js` — Sync implementation
 - `.hierophage/profiles/kawazu/preferences.md` — Example preferences
 
+### MCP State Server
+
+Persistent state for the ritual profile via Model Context Protocol:
+
+- User profile (identity, health, delegation scope)
+- Directive history (one-time and recurring)
+- Habit tracking with streaks and 21-day graduation threshold
+- Session notes for continuity
+
+**Key files:**
+- `.hierophage/mcp-servers/state-server.js` — MCP server implementation
+- `~/.hierophage/state/user-profile.json` — Runtime state (not in repo)
+
+### Habit Tracking (Active)
+
+The ritual profile is actively tracking 7 habits with streak-based graduation:
+- Water upon waking, morning stretching, fiber/probiotic, scheduled walks, vitamins, square breathing, sensory mindfulness
+- Check-ins recorded via MCP tools
+- 21-day streak triggers graduation consideration
+
 ## Speculative Directions (Not Yet Built)
 
 From `docs/foundation.md`:
@@ -84,11 +104,16 @@ From `docs/foundation.md`:
 
 ## Key Files
 
-- `docs/foundation.md` — Philosophical foundation, the practical division, speculative directions
-- `docs/development-cycle.md` — How the software develops itself through the user (read this before proposing changes)
+**Read these at session start (per SDLC):**
+- `docs/foundation.md` — Constitutional authority; philosophical foundation
+- `docs/traces.md` — Institutional memory: decisions made, precedents set
+- `docs/work-summary.md` — What's been built (technical catalog)
+- `docs/active-plan.md` — Current development direction (AI maintains, user reads)
+
+**Reference as needed:**
+- `docs/development-cycle.md` — How the software develops itself through the user
 - `docs/gemini-systems-reference.md` — Technical reference for gemini-cli extension points
-- `docs/traces.md` — Institutional memory: decisions made, work deferred, precedents set
-- `docs/work-summary.md` — Catalog of work completed
+- `docs/discord-bot-spec.md` — Spec for The Emissary (Discord bot, not yet built)
 - `.hierophage/` — All hierophage-specific code and configuration
 
 ## How Development Works
@@ -119,7 +144,8 @@ The codebase is gemini-cli. We're transforming what it does through:
 
 - Profile system for switchable prompt stacks
 - LLM-assisted prompt sync for upstream compatibility
-- Eventually: persistent state, interaction rituals, custom modes
+- MCP state server for persistent user profile and habit tracking
+- Planned: Discord bot for proactive check-ins, interaction rituals
 
 When pulling upstream updates, the `.hierophage/` directory and custom prompt configuration persist. The `hierophage` command is maintained via wrapper script.
 

@@ -121,6 +121,30 @@ Deferred extensions, settings, hooks to "learn as we go."
 
 LLM-assisted merging chosen over manual diff resolution. User defines `preferences.md` with exact text to preserve + semantic preferences. System generates merged prompt, creates PR for review.
 
+### 2026-01-29: MCP State Server
+
+Implemented `hierophage-state` MCP server for persistent user profile and directive tracking. State lives in `~/.hierophage/state/user-profile.json`. Tools: `hierophage_get_user_profile`, `hierophage_update_user_profile`, `hierophage_add_directive`, `hierophage_record_habit_checkin`, `hierophage_add_session_note`.
+
+### 2026-01-29: Habit Tracking System
+
+Directives split into `recurring` and `one-time` types. Recurring directives track streaks with structure: current streak, longest streak, total check-ins, history array. Graduation threshold set at 21 consecutive days (habit formation baseline). One-time directives have `outcome` field (pending/completed/abandoned).
+
+### 2026-01-29: Delegation Framework
+
+User intake established: identity, health constraints, medications, living situation, work status, delegation scope. Key principle recorded: "grow me to grow you to grow me to grow the program itself." Excluded domains: THC intake, things directly impacting girlfriend.
+
+### 2026-01-30: Progressive Habit Layering
+
+Pattern established: new recurring habits build on established ones. Morning sequence: water → stretching → supplements. Mid-day breaks added after morning routine stabilized. Avoids overwhelming with simultaneous new behaviors.
+
+### 2026-02-02: Check-in as Institutional Relationship
+
+User observed feeling bad about missing a check-in despite completing all underlying habits. This confirms the check-in itself carries weight—it's not just logging, it's appearing before something that holds you accountable. The form (ritual of appearing) matters alongside the content (habits completed).
+
+### 2026-02-02: One-Time Directives for Exploration
+
+Pattern introduced: user can request single-day commitments to try practices without ongoing obligation. First instance: judgment observation (notice judgments about others without acting/analyzing/suppressing). Allows experimentation before deciding whether to formalize as recurring.
+
 ---
 
 ## Future Traces
