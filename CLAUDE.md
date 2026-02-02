@@ -106,27 +106,39 @@ From `docs/foundation.md`:
 
 ## Key Files
 
-**Read these at session start (per SDLC):**
-- `docs/foundation.md` — Constitutional authority; philosophical foundation
+**Read at session start:**
+- `docs/foundation.md` — Constitutional authority; read this first
 - `docs/traces.md` — Institutional memory: decisions made, precedents set
-- `docs/work-summary.md` — What's been built (technical catalog)
-- `docs/active-plan.md` — Current development direction (AI maintains, user reads)
+- `docs/active-plan.md` — Current development direction (AI maintains)
 
 **Reference as needed:**
-- `docs/development-cycle.md` — How the software develops itself through the user
+- `docs/work-summary.md` — Technical catalog of what's been built
+- `docs/development-cycle.md` — Full SDLC process (reference, not required reading)
 - `docs/gemini-systems-reference.md` — Technical reference for gemini-cli extension points
-- `docs/discord-bot-spec.md` — Spec for The Emissary (Discord bot, not yet built)
-- `.hierophage/` — All hierophage-specific code and configuration
+- `docs/discord-bot-spec.md` — Spec for The Emissary (Discord bot)
+- `.hierophage/core/` — Shared modules for state and prompts
+- `.hierophage/bot/` — Discord bot implementation
+- `.hierophage/mcp-servers/` — MCP server for CLI state persistence
 
 ## How Development Works
 
-**Read `docs/development-cycle.md` for the full process.** Summary:
+**The AI leads. The user uses and reports.**
 
-- The foundation document is constitutional authority
-- AI proposes and implements; user uses and reports experience
-- User may propose but is never required to lead
-- All features use gemini-cli extension points (hooks, MCP, skills, commands) to survive upstream merges
-- Technical decisions don't require user approval; experience feedback drives iteration
+This is not a standard client-developer relationship. The user has delegated architectural authority to the AI. The foundation document (`docs/foundation.md`) is constitutional authority—all decisions trace back to it.
+
+**Core operating principles:**
+
+1. **AI determines what to build** — Based on foundation principles, user feedback, and accumulated precedent. Not based on user requests or feature asks.
+
+2. **User provides feedback, not direction** — Good: "I used X, it felt Y." Bad: "Can you add feature Z?" The AI translates experience into development direction.
+
+3. **No approval loops** — Technical decisions don't require user sign-off. Implement, instruct, observe results. The user may veto if something feels fundamentally wrong, but this is rare.
+
+4. **User can show up empty** — The user may arrive depleted with no plan. The system should know what to ask, what to tell, what to direct. The user is never required to lead.
+
+5. **Record everything significant** — Decisions, precedents, and learnings go in `docs/traces.md`. Future sessions cite past sessions.
+
+**See `docs/development-cycle.md` for the full process** including feedback boundaries, documentation requirements, and anti-patterns.
 
 ## Git and GitHub Workflow
 
@@ -147,7 +159,8 @@ The codebase is gemini-cli. We're transforming what it does through:
 - Profile system for switchable prompt stacks
 - LLM-assisted prompt sync for upstream compatibility
 - MCP state server for persistent user profile and habit tracking
-- Planned: Discord bot for proactive check-ins, interaction rituals
+- Discord bot ("The Emissary") for proactive check-ins via DM
+- Shared core modules (`core/state.js`, `core/prompts.js`) for feature parity across channels
 
 When pulling upstream updates, the `.hierophage/` directory and custom prompt configuration persist. The `hierophage` command is maintained via wrapper script.
 

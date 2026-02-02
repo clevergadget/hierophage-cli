@@ -219,7 +219,7 @@ class Emissary {
         contents,
         systemInstruction: systemPrompt,
         generationConfig: {
-          maxOutputTokens: 256,
+          maxOutputTokens: 2048,
           temperature: 0.7
         }
       });
