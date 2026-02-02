@@ -67,8 +67,12 @@ Foundation traces:
 3. **Build pattern analysis** — Analyze compliance data over time to calibrate directives
 
 ### Discord Bot (The Emissary)
-1. **Phase 1: Basic bot** — Discord connection, DM handling, AI integration, state persistence
-2. **Phase 2: Timing system** — Anchor tracking, window calculation, scheduled check-ins
+1. ~~**Phase 1: Basic bot**~~ — Done. Discord connection, DM handling, AI integration, state persistence
+   - `emissary.js` — Main bot with Discord.js integration
+   - `ai-client.js` — Gemini API integration with foundation-aligned system prompt
+   - `state-manager.js` — Shares state with CLI's MCP server
+   - `setup.js` — Configuration wizard
+2. **Phase 2: Timing system** — Partially implemented (anchor tracking, window calculation, scheduled check-ins in code, needs testing)
 3. **Phase 3: Intelligence** — Context parsing, outcome tracking, directive calibration
 4. **Phase 4: Polish** — CLI commands, setup wizard, error handling
 

@@ -1,0 +1,15 @@
+{
+  "name": "hierophage-emissary",
+  "version": "0.1.0",
+  "description": "Discord bot extension of the Hierophage ritual system",
+  "main": "emissary.js",
+  "type": "module",
+  "scripts": {
+    "start": "node emissary.js",
+    "setup": "node setup.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "@google/generative-ai": "^0.21.0"
+  }
+}

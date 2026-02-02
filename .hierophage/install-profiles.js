@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * Install hierophage profiles and MCP servers to user's home directory
+ * Install hierophage profiles, MCP servers, and Discord bot to user's home directory
  *
- * Usage: node .hierophage/install-profiles.js [--force]
+ * Usage: node .hierophage/install-profiles.js [--force] [--skip-npm]
  *
  * Creates ~/.hierophage/ with:
  * - profiles.json (profile definitions)
  * - profiles/{ritual,kawazu,bare}/system.md (prompt templates)
  * - mcp-servers/ (MCP server code and dependencies)
+ * - bot/ (Discord bot code and dependencies)
  * - state/ (created empty, stores user data at runtime)
  *
  * Optionally updates ~/.gemini/settings.json with MCP server configuration.
@@ -187,6 +188,32 @@ function main() {
     console.log('No MCP servers found in source directory.');
   }
 
+  // Copy Discord bot
+  console.log('\n--- Discord Bot (The Emissary) ---');
+  const botSrcDir = join(SOURCE_DIR, 'bot');
+  const botDestDir = join(HIEROPHAGE_HOME, 'bot');
+
+  if (existsSync(botSrcDir)) {
+    copyDirectory(botSrcDir, botDestDir, '~/.hierophage/bot');
+
+    // Run npm install in bot directory
+    if (!SKIP_NPM && existsSync(join(botDestDir, 'package.json'))) {
+      console.log('\nInstalling Discord bot dependencies...');
+      try {
+        execSync('npm install', {
+          cwd: botDestDir,
+          stdio: 'inherit'
+        });
+        console.log('Discord bot dependencies installed.');
+      } catch (e) {
+        console.log(`Warning: npm install failed: ${e.message}`);
+        console.log('You may need to run: cd ~/.hierophage/bot && npm install');
+      }
+    }
+  } else {
+    console.log('No bot found in source directory.');
+  }
+
   console.log('\n--- Installation Complete ---');
   console.log('\nProfile system installed to ~/.hierophage/');
   console.log('\nUsage:');
@@ -198,6 +225,14 @@ function main() {
 
   if (existsSync(join(mcpDestDir, 'state-server.js'))) {
     console.log('\nMCP state server installed. The ritual profile uses this for persistence.');
+  }
+
+  if (existsSync(join(botDestDir, 'emissary.js'))) {
+    console.log('\nDiscord bot installed. To set up:');
+    console.log('  cd ~/.hierophage/bot && node setup.js');
+    console.log('  export DISCORD_TOKEN=your_token');
+    console.log('  export GEMINI_API_KEY=your_key');
+    console.log('  npm start');
   }
 }
 
