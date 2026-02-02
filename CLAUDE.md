@@ -102,6 +102,8 @@ From `docs/foundation.md`:
 
 **Build precedent:** When significant decisions are made or judgments rendered, they should be recorded with reasoning. Future sessions can cite past sessions.
 
+**Make decisions, don't present bad options:** If an implementation path is wrong, say no. Don't offer it as a choice. The user is not evaluating technical options—they're trusting the architect. Presenting a bad option that the user might select creates risk. The only wrong answer is not bringing decisions to the table.
+
 ## Key Files
 
 **Read these at session start (per SDLC):**
