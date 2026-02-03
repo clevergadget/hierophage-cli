@@ -1,372 +1,452 @@
-# Stigmergy: Collective Judgment Through Traces
+# Stigmergy: Specification Through Swarm Behavior
 
-*How many minds converge on specification without direct coordination.*
+## What is Stigmergy?
 
----
+Stigmergy is how ants build anthills without a foreman.
 
-## Why This Matters to Hierophage
+No ant knows the whole plan. No ant gives orders to other ants. Each ant leaves chemical traces (pheromones) as it works. Other ants respond to those traces. Drop food here, the trace strengthens. Avoid danger there, the trace fades. Over time, complex structures emerge from simple local rules.
 
-The foundation establishes that language is a shared operating environment. Every utterance modifies conditions for future utterances. Speech leaves traces. Traces shape what comes next.
+The key insight: **coordination without communication**. The environment itself becomes the communication medium. Work leaves traces. Traces guide future work. No central plan required.
 
-Stigmergy is this principle operationalized for specification work.
-
-The problem: turning an underspecified goal into a trustworthy spec is hard. Single-threaded reasoning (one model, one context window) hits limits. Parallelizing naively produces incoherence. Expensive models with long contexts produce expensive garbage as often as expensive gold.
-
-The insight: ants build cathedrals without architects. They leave pheromones. Other ants respond to the pheromone landscape. No central plan. No direct communication. Coordination emerges from accumulated traces in a shared environment.
-
-We can do this with specification artifacts. Many small contributions, each leaving traces (signals), each responding to the trace landscape. Convergence emerges. The spec stabilizes not because someone declared it done, but because the signals indicate stability.
-
-This is institution-building at the artifact level. The workspace becomes something that records memory, legitimizes speech through evidence, slows impulse through decomposition, and refuses to collapse the channel by keeping uncertainty explicit.
+This document proposes using stigmergy for specification work. Instead of one person (or one AI) trying to hold an entire spec in their head, many small workers (cheap model calls) each contribute tiny pieces. Each piece leaves signals. Signals guide what happens next. The spec converges without anyone orchestrating it.
 
 ---
 
-## The Connection to Foundation Principles
+## The Problem We're Solving
 
-### Language as Shared Operating Environment
+You have a vague idea: "Build a Discord bot that checks in with me and gives me things to do."
 
-The workspace IS language. Every node is a speech act: a claim, a constraint, a question, a decision. The signals attached to nodes are the "conditions for future utterances" that each utterance creates. High Need attracts attention. High Conflict demands reconciliation. High Confidence permits building upon.
+Today's options:
 
-The workspace is not a database. It is a linguistic ecosystem.
+1. **Single expensive model call**: Feed it everything, hope it produces something useful. Often produces verbose garbage. Context limits hit fast. No way to verify intermediate reasoning.
 
-### Institution, Not Tool
+2. **Back-and-forth conversation**: Model asks clarifying questions, you answer, it refines. Works but requires your attention throughout. Doesn't parallelize.
 
-A tool processes input and produces output. An institution accumulates precedent, maintains memory, enforces norms, and shapes behavior over time.
+3. **Manual decomposition**: You break it down yourself, assign pieces, integrate results. You become the bottleneck.
 
-The stigmergic workspace is an institution:
-- **Records memory**: Every artifact persists. Provenance is tracked.
-- **Legitimizes speech**: Confidence requires evidence. Claims without backing remain provisional.
-- **Slows impulse**: Decomposition rules prevent premature commitment. Uncertainty must be acknowledged before it can be resolved.
-- **Refuses to collapse the channel**: Open questions remain visible. Branches coexist until evidence favors one.
+What we want: **Give it the vague request. Walk away. Come back to a usable spec.**
 
-### Mercy Over Punishment
-
-When a node has low confidence or high conflict, the system does not punish it. It does not delete it or hide it or shame the contributor. It decomposes it—gives it room to breathe, creates space for the uncertainty to resolve through smaller, more tractable claims.
-
-Revision without erasure. The history of what was believed and why remains visible. Grace preserves continuity.
-
-### The Human Asymmetry
-
-Humanity is better in word than in deed. Specs are words. Implementations are deeds. The gap between a spec and working software is the human asymmetry manifested.
-
-This system addresses the gap by making the spec itself more rigorous. Not through bureaucracy, but through evidence accumulation. A spec backed by examples, acceptance criteria, interface contracts, and test cases is closer to deed than a spec that is just words.
-
-The goal is not to produce more words. The goal is to produce words that bind—words with consequence, words that constrain implementation, words that can be verified.
-
-### Persuasion Everywhere
-
-Every artifact in the workspace is persuasion. A well-written acceptance criterion persuades toward a particular implementation. A risk note persuades toward caution. A decision record persuades future contributors to respect the choice or explicitly overturn it.
-
-The signals themselves are persuasion. High Need says: attend to me. High Conflict says: resolve me before proceeding. Low Volatility says: trust me, I have stabilized.
-
-The system does not pretend neutrality. It routes attention. It shapes behavior. It has values embedded in its decomposition and convergence rules.
-
-### Play as Substrate
-
-Microtasks are moves in a game. The rules are clear: reference one node, produce one artifact, attach one verification hook, update signals. The progress is visible: Need decreases, Confidence increases, the heatmap cools.
-
-Small, achievable moves. Visible progress. Clear feedback. This is play—effort made inhabitable through structure and feedback.
-
-A specification process that feels like drudgery will not be used. A specification process that feels like a game—with levels (decomposition depth), scores (signal values), and completion states (stabilization)—invites return.
+The spec should surface the ambiguities it found and the choices it made. You review decisions, not process. If something's wrong, you correct it and the system re-stabilizes.
 
 ---
 
-## The Workspace
+## How Stigmergy Gets Us There
 
-### Nodes
+### The Workspace
 
-A node is a unit of specification. Types:
+A directory of markdown files. Each file is a **node**—a single claim, question, or decision. Nodes have **signals** in their frontmatter:
 
-| Type | Purpose |
-|------|---------|
-| **Outcome** | What the system should achieve (user-facing) |
-| **Acceptance** | How we know an outcome is met (testable) |
-| **Interface** | Contract between components (signatures, invariants) |
-| **Constraint** | Limitation or requirement that bounds solutions |
-| **Decision** | A choice made, with rationale and alternatives |
-| **Risk** | Something that could go wrong, with mitigation |
-| **Question** | An explicit unknown requiring resolution |
-| **Example** | A concrete instance illustrating behavior |
+```yaml
+---
+type: outcome
+need: 8
+confidence: 2
+conflict: 0
+---
+# Bot reaches out proactively
 
-Nodes link to each other. An Outcome links to its Acceptance criteria. An Interface links to its Constraints. A Decision links to the Question it resolved.
+The bot should initiate contact, not wait for the user.
 
-### Signals
+## Open questions
+- What triggers a check-in?
+- How often?
+- What time of day?
+```
 
-Signals are traffic signs, not truth. They route attention.
+Signals are numbers from 0-10:
+- **Need**: How important/blocking is this? High need = attend to it.
+- **Confidence**: How settled is this? Low confidence = decompose further.
+- **Conflict**: Are there contradictions? High conflict = resolve before proceeding.
 
-| Signal | Meaning | Range |
-|--------|---------|-------|
-| **Need (N)** | How blocked/impactful if unresolved | 0-10 |
-| **Confidence (C)** | How settled/trustworthy | 0-10 |
-| **Conflict (K)** | Whether contradictions exist | 0-10 |
-| **Volatility (V)** | How frequently changing | 0-10 |
+### The Pulse
 
-**Rule**: Confidence cannot increase without evidence. Adding an example, a test case, a verification hook—these increase Confidence. Assertion alone does not.
+A "pulse" is one work cycle. The system:
 
-### Branches
+1. Scans all nodes, finds the highest-priority target (high need + low confidence, or high conflict)
+2. Spawns cheap model calls to work on that node
+3. Each call produces a small artifact: one acceptance criterion, one example, one question, one interface signature
+4. Artifacts are written as new nodes or modifications to existing nodes
+5. Signals update based on what was produced
 
-When uncertainty is high, a node may carry multiple branches—alternative interpretations or solutions that coexist until evidence favors one.
+Multiple pulses run until the workspace stabilizes (need drops, confidence rises, conflicts resolve).
 
-Branches are not failure. They are honesty. Premature commitment is the failure mode this prevents.
+### The Swarm
 
-Branch collapse is a Decision. It must be logged with rationale.
+Parallelism comes from independence. If node A and node B don't depend on each other, workers can process them simultaneously. Each worker only sees the node it's working on plus its immediate neighbors.
+
+Cheap models (Gemini Flash, GPT-4o-mini, Haiku) handle the bulk. They're good enough for "write one example" or "identify one risk." They're bad at holding large contexts or making judgment calls.
+
+Expensive models (Gemini 3 Pro, Claude Opus, GPT-4) handle:
+- Initial decomposition of the vague request
+- Conflict resolution when cheap models disagree
+- Final weaving of the spec into readable documents
+
+Cost structure: 100 cheap calls + 3 expensive calls beats 10 expensive calls, both in price and output quality.
+
+### Convergence
+
+The workspace converges when:
+- No node has need > 3 and confidence < 7
+- No node has conflict > 2
+- Every outcome has at least one acceptance criterion
+- Every acceptance criterion has at least one example
+
+At that point, the weaver runs: an expensive model reads the entire workspace and produces human-readable documents (SPEC.md, ACCEPTANCE.md, DECISIONS.md).
 
 ---
 
-## System Behaviors
+## Architecture for Hierophage
 
-### Decomposition (When to Split)
+### File Structure
 
-A node should decompose when:
-- Need is high AND Confidence is low (important but uncertain)
-- Conflict is high (contradictory claims need untangling)
-- Volatility is high (churn indicates missing structure)
-- Many dependents exist but the node remains vague
+```
+.hierophage/
+├── stig/
+│   ├── workspace/           # Node files live here
+│   │   ├── outcome-001.md
+│   │   ├── acceptance-001.md
+│   │   ├── question-001.md
+│   │   └── ...
+│   ├── rollups/             # Weaver output
+│   │   ├── SPEC.md
+│   │   ├── ACCEPTANCE.md
+│   │   └── DECISIONS.md
+│   ├── config.json          # Model settings, thresholds
+│   └── history/             # Past workspaces (for learning)
+```
 
-Decomposition creates tighter claims:
-- Outcome → Acceptance criteria + Examples
-- Decision → Options + Evaluation criteria + Choice rationale
-- Risk → Spike plan + Expected learning + Stop condition
-- Interface → Signature + Invariants + Error cases
+### Node Format
 
-### Convergence (When to Stop)
+Each node is a markdown file with YAML frontmatter:
 
-A node is stable when:
-- Confidence is high (≥7)
-- Conflict is low (≤2)
-- At least one verification hook exists
-- Volatility is low over a defined window
+```yaml
+---
+id: outcome-001
+type: outcome
+created: 2026-02-02T14:30:00Z
+modified: 2026-02-02T15:45:00Z
+need: 8
+confidence: 3
+conflict: 0
+links:
+  - acceptance-001
+  - acceptance-002
+  - question-001
+branches: []
+evidence: []
+---
+# Bot reaches out proactively
 
-Stabilization is not immutable. It establishes "current best understanding" with hooks for revalidation if upstream changes.
+The bot initiates contact at intervals relative to the user's wake time.
 
-### Conflict Handling
+## Notes
+- "Proactively" means the bot messages first, not responding to user input
+- Timing should accommodate variable sleep schedules
+```
 
-When artifacts contradict:
-1. Do not average or smooth over
-2. Increase Conflict signal
-3. Generate a reconciliation task:
-   - Identify the conflict surface
-   - Propose resolution paths
-   - Require explicit Decision if a choice is made
+### Signal Update Rules
 
-Conflict is information. It means the problem space has structure we haven't captured yet.
+Signals change based on what happens to a node:
 
-### Evaporation
+| Event | Need | Confidence | Conflict |
+|-------|------|------------|----------|
+| Child node created | -1 | — | — |
+| Example added | — | +2 | — |
+| Acceptance criterion added | — | +1 | — |
+| Test case linked | — | +2 | — |
+| Contradicting node found | — | — | +3 |
+| Contradiction resolved | — | +1 | -5 |
+| Upstream dependency changed | — | -2 | — |
 
-Confidence decays when:
-- Upstream dependencies change
-- Time-based assumptions expire
-- Related nodes exhibit high volatility
+These are tunable. We start with these defaults and adjust based on what produces good specs.
 
-This prevents false stability—nodes that feel settled but are actually stale.
+### CLI Commands
 
-### Weaving
+```bash
+# Initialize a workspace from a goal
+hierophage stig init "A Discord bot that checks in and issues directives"
 
-Periodic consolidation produces human-readable documents:
-- `SPEC.md` — Narrative specification
-- `ACCEPTANCE.md` — Testable criteria with examples
-- `DECISIONS.md` — ADR-style decision records
-- `RISKS.md` — Known risks and mitigations
-- `OPEN.md` — Unresolved questions and active branches
+# Run one pulse (find target, spawn workers, update signals)
+hierophage stig pulse
 
-Weaving is not micromanagement. It is the system explaining itself.
+# Run until stable (max 50 pulses by default)
+hierophage stig run
+
+# Show current state (what needs attention, what's stable)
+hierophage stig status
+
+# Produce human-readable spec from workspace
+hierophage stig weave
+
+# Review a specific node
+hierophage stig show outcome-001
+
+# Manually adjust a signal (human override)
+hierophage stig set outcome-001 confidence 8
+```
+
+### Model Dispatch
+
+The system uses different models for different tasks:
+
+| Task | Model | Why |
+|------|-------|-----|
+| Initial decomposition | Gemini 3 Pro | Needs to understand vague intent, produce coherent structure |
+| Generate one example | Gemini Flash | Simple task, cheap, can run many in parallel |
+| Generate one acceptance criterion | Gemini Flash | Same |
+| Identify risks | Gemini Flash | Surface-level pattern matching |
+| Detect conflicts | Gemini Flash | Compare two nodes, binary output |
+| Resolve conflicts | Gemini 3 Pro | Requires judgment, context, foundation alignment |
+| Weave final spec | Gemini 3 Pro | Needs to synthesize entire workspace coherently |
+
+Model selection is configurable. The system should work with any provider that supports the Gemini/OpenAI-style API.
+
+### Foundation Alignment Layer
+
+Hierophage has values. The stigmergy system should produce specs that embody those values.
+
+Before any artifact is committed, it passes through a foundation check:
+
+```
+Does this artifact:
+- Assume trust is pre-established (no justification language)?
+- Preserve grace over punishment?
+- Keep uncertainty explicit rather than hiding it?
+- Avoid premature commitment?
+```
+
+The check is a cheap model call with the foundation summary in context. Artifacts that fail get flagged for human review or expensive model revision.
+
+This is how the swarm inherits the culture. Each worker carries a compressed version of the foundation. Divergent artifacts get caught.
 
 ---
 
-## Concrete Example: Speccing "The Emissary"
+## Worked Example: Speccing a Feature
 
-Suppose we use this system to spec the Discord bot before building it.
+### Input
 
-### Initial Goal (User Input)
-
-> "A Discord bot that extends the ritual profile. It should reach out proactively, ask what's happening, and issue directives based on context."
-
-### First Pass: Top-Level Nodes
-
-The system ingests this and produces initial nodes:
-
-```
-[Outcome:001] Bot reaches out proactively
-  N:8 C:2 K:0 V:0
-  Links: none yet
-  Branches: none
-  Notes: "proactively" is vague—when? how often? what triggers?
-
-[Outcome:002] Bot asks what's happening
-  N:6 C:4 K:0 V:0
-  Links: none yet
-  Notes: straightforward, but format/tone undefined
-
-[Outcome:003] Bot issues directives based on context
-  N:9 C:1 K:0 V:0
-  Links: none yet
-  Notes: "context" is vague—what context? how used?
-
-[Constraint:001] Must align with foundation principles
-  N:7 C:8 K:0 V:0
-  Links: Outcome:001, Outcome:002, Outcome:003
-  Notes: foundation.md is canonical reference
+User runs:
+```bash
+hierophage stig init "Add a command that lets users set daily reminders with custom messages"
 ```
 
-### Decomposition Pass
+### Initial Decomposition (Gemini 3 Pro)
 
-Outcome:001 has high Need (8) and low Confidence (2). Decompose:
-
-```
-[Outcome:001] Bot reaches out proactively
-  Status: decomposed into children
-
-  [Question:001] What triggers a proactive check-in?
-    N:8 C:0 K:0 V:0
-    Branches:
-      A: Fixed schedule (9am, 3pm, 9pm)
-      B: Anchor-relative (30-90 min after wake)
-      C: User-defined windows
-    Notes: Branch B aligns with ADHD support in foundation
-
-  [Acceptance:001] Check-in timing is relative to wake anchor
-    N:7 C:3 K:0 V:0
-    Links: Question:001 (implements Branch B)
-    Example: "If wake at 10:32am, first check-in 11:02-12:02am"
-
-  [Constraint:002] No shame for missed check-ins
-    N:6 C:9 K:0 V:0
-    Links: Constraint:001
-    Notes: directly from foundation—grace preserves continuity
-```
-
-### Conflict Example
-
-Suppose two contributors produce contradictory acceptance criteria:
+The expensive model reads the goal and produces initial nodes:
 
 ```
-[Acceptance:003a] Bot should explain why it's issuing a directive
-  N:5 C:4 K:0 V:0
-  Evidence: "users need to understand rationale"
-
-[Acceptance:003b] Bot should NOT explain directives
-  N:7 C:6 K:0 V:0
-  Evidence: "foundation says no justification—trust is pre-established"
+workspace/
+├── outcome-001.md    "Users can set daily reminders"
+├── outcome-002.md    "Reminders have custom messages"
+├── outcome-003.md    "Reminders trigger at specified times"
+├── constraint-001.md "Must work within existing CLI architecture"
+├── question-001.md   "Where is reminder state stored?"
+├── question-002.md   "What happens if the CLI isn't running at reminder time?"
+├── question-003.md   "Can users have multiple reminders?"
 ```
 
-System detects contradiction, sets K:8 on both, generates:
+Initial signals: all outcomes have need:7, confidence:2. Questions have need:8, confidence:0.
 
-```
-[Question:002] Should directives include explanation?
-  N:9 C:0 K:8 V:0
-  Links: Acceptance:003a, Acceptance:003b
-  Resolution needed: check foundation.md
+### Pulse 1
 
-[Decision:001] Directives do not include explanation
-  N:0 C:9 K:0 V:0
-  Links: Question:002
-  Rationale: Foundation §"The Epistemic Model" explicitly states
-    "No justification. No encouragement. No persuasion in the moment."
-  Alternatives considered: Acceptance:003a
-  What would change this: User explicitly requests explanation mode
-```
+System identifies question-001 as highest priority (need:8, confidence:0).
 
-Acceptance:003a is marked superseded. Acceptance:003b becomes canonical.
+Spawns 3 cheap model workers in parallel, each proposing an answer:
+- Worker A: "Store in ~/.hierophage/state/reminders.json"
+- Worker B: "Store in SQLite database"
+- Worker C: "Store in the existing user-profile.json"
 
-### Stabilization
+Workers produce three branch nodes under question-001. Conflict detected (3 incompatible answers), conflict signal rises to 6.
 
-After several passes, Outcome:003 looks like:
+### Pulse 2
 
-```
-[Outcome:003] Bot issues directives based on context
-  N:2 C:8 K:0 V:1
-  Status: stable
-  Children:
-    [Acceptance:005] Directive is single, concrete action (C:9)
-    [Acceptance:006] Directive matches user energy level (C:7)
-    [Acceptance:007] Failure classification uses foundation categories (C:9)
-    [Interface:001] System prompt template with context slots (C:8)
-    [Example:001] "User: just woke up, groggy → Directive: drink water" (C:9)
-    [Example:002] "User: staring at screen → Directive: stand, walk" (C:9)
-  Verification: Examples map to test cases in test/emissary.test.js
-```
+System identifies question-001's conflict as highest priority.
+
+Spawns expensive model to adjudicate:
+- Reviews hierophage architecture (existing state uses JSON files)
+- Reviews constraint-001 (must work within existing architecture)
+- Decides: "Store in existing state directory as reminders.json, following pattern of user-profile.json"
+
+Produces decision-001.md with rationale. Supersedes branches B and C. Conflict drops to 0, confidence rises to 7.
+
+### Pulse 3-8
+
+Cheap workers flesh out the outcomes:
+- acceptance-001.md: "User can run `hierophage remind add '9am' 'Take medication'`"
+- acceptance-002.md: "User can run `hierophage remind list` to see all reminders"
+- acceptance-003.md: "User can run `hierophage remind remove <id>` to delete"
+- example-001.md: Full CLI session showing add/list/remove flow
+- interface-001.md: Data schema for reminders.json
+- risk-001.md: "If CLI not running, reminder won't trigger—need daemon or cron"
+
+### Pulse 9
+
+Question-002 ("What if CLI isn't running?") still has need:8, confidence:2.
+
+Cheap workers propose:
+- Worker A: "Use system cron job"
+- Worker B: "Run hierophage as daemon"
+- Worker C: "Integrate with OS notification system"
+
+Conflict rises. Expensive model adjudicates based on constraint-001 (existing architecture). Decides: "Use system cron, provide setup command `hierophage remind install-cron`"
+
+### Stability Check
+
+After 12 pulses:
+- All outcomes have confidence ≥ 7
+- All questions have decisions
+- No conflicts above 2
+- Each acceptance criterion has examples
+
+System reports: "Workspace stable. Run `hierophage stig weave` to generate spec."
 
 ### Weave Output
 
-The weaver produces `SPEC.md`:
-
+SPEC.md:
 ```markdown
-# The Emissary: Discord Bot Specification
+# Daily Reminders Feature
 
 ## Overview
-The Emissary extends the Hierophage ritual profile to Discord DMs...
+Users can set daily reminders with custom messages. Reminders are stored
+locally and trigger via system cron.
 
-## Proactive Check-Ins
-Check-ins are scheduled relative to the wake anchor, not fixed times.
-This accommodates variable schedules (ADHD support per foundation).
+## Commands
+- `hierophage remind add <time> <message>` — Create a reminder
+- `hierophage remind list` — Show all reminders
+- `hierophage remind remove <id>` — Delete a reminder
+- `hierophage remind install-cron` — Set up system cron integration
 
-Window: 30-90 minutes after wake anchor reported.
-Randomization: Time is randomized within window to avoid predictability.
-
-## Directive Issuance
-Directives are:
-- Single, concrete actions
-- Matched to user's reported energy level
-- Issued without explanation (trust is pre-established)
-
-When user reports failure, classify using foundation categories:
-fear, fatigue, ambiguity, resentment, misalignment, incoherence.
+## Data Storage
+Reminders stored in ~/.hierophage/state/reminders.json following
+existing state file patterns.
 
 ## Decisions Made
-- [Decision:001] No explanation with directives (foundation alignment)
-- [Decision:002] Anchor-relative timing over fixed schedule (ADHD support)
+1. JSON storage over SQLite (consistency with existing architecture)
+2. Cron-based triggering over daemon (simpler, no persistent process)
+
+## Open Items
+- [ ] Define notification mechanism when reminder triggers
+- [ ] Decide behavior for past-due reminders on system wake
 ```
 
----
-
-## Implementation Path
-
-This system can be built incrementally:
-
-**Phase 0: Manual**
-Use the concepts with manual markdown files. No tooling. Validate that the decomposition/convergence logic produces useful specs.
-
-**Phase 1: CLI Scaffolding**
-`hierophage stig init` — create workspace structure
-`hierophage stig status` — show signal heatmap
-`hierophage stig weave` — produce roll-up documents
-
-**Phase 2: AI-Assisted Microtasks**
-`hierophage stig pulse` — select highest-Need node, generate candidate artifacts, update signals. Human reviews and commits.
-
-**Phase 3: Parallel Execution**
-Multiple cheap model calls generate candidates. Verification layer (consistency checks, foundation alignment) filters. Expensive model adjudicates conflicts.
-
-**Phase 4: Autonomous Stabilization**
-System runs until stability thresholds met. Human reviews final spec and open questions.
+ACCEPTANCE.md lists all acceptance criteria with examples.
+DECISIONS.md lists all decisions with full rationale.
 
 ---
 
-## What This Is Not
+## Why This Works
 
-This is not a replacement for thinking. It is a structure for thinking at scale.
+### Parallelism Without Chaos
 
-This is not autonomous spec generation. Human intent remains sovereign. The system proposes; humans commit.
+Each worker sees only what it needs. No worker tries to hold the whole spec. Conflicts are detected structurally (two nodes claiming incompatible things) not semantically (hoping the model notices a contradiction in its own output).
 
-This is not bureaucracy. The microtask protocol exists to enable parallelism and verification, not to create paperwork. If it feels like paperwork, it's being used wrong.
+### Cheap Where Possible, Expensive Where Necessary
 
----
+The ratio should be ~20:1 cheap to expensive calls. Cheap models do volume work. Expensive models make judgment calls. This inverts the typical pattern of throwing expensive models at everything.
 
-## The Bet
+### Decisions Are Explicit
 
-The bet is this: specification work can be parallelized across many small contributors (human or AI) if coordination happens through artifacts and signals rather than through direct communication.
+Every choice is recorded with rationale and alternatives considered. Six months later, you can see why the spec says what it says. If circumstances change, you know which decisions to revisit.
 
-The workspace becomes a shared mind—not a hive mind that subsumes individuals, but a collective judgment that emerges from accumulated traces.
+### Foundation Travels With the Swarm
 
-If this works, it means:
-- Specs can be produced faster (parallelism)
-- Specs can be produced cheaper (small models for microtasks, big models for adjudication)
-- Specs are more trustworthy (evidence-backed, conflict-surfaced, uncertainty-explicit)
-- The process embodies hierophage values (grace, precedent, persuasion, play)
-
-If this fails, we will know because the workspace becomes chaotic instead of convergent, or the overhead exceeds the value, or the specs produced are no better than single-threaded reasoning.
-
-We will find out by using it.
+Each worker carries the culture. The foundation alignment check means divergent outputs get caught before they pollute the workspace. The spec that emerges reflects hierophage values even though no single worker understood the whole thing.
 
 ---
 
-*This document is itself an artifact in the hierophage workspace. Its signals: N:7, C:4, K:2, V:3. It awaits evidence.*
+## What We're Betting On
+
+The bet: **swarm behavior can produce better specs than single-threaded reasoning, faster and cheaper.**
+
+"Better" means:
+- More complete (parallel workers find more edge cases)
+- More consistent (conflicts are surfaced, not buried)
+- More trustworthy (every claim has evidence or is marked uncertain)
+- More aligned (foundation check on every artifact)
+
+We'll know it works if specs produced this way lead to implementations with fewer surprises. We'll know it fails if the workspace never stabilizes, or stabilizes on garbage, or the overhead exceeds the value.
+
+The only way to find out is to use it.
+
+---
+
+## Implementation Plan
+
+### Phase 1: Manual Stigmergy
+
+Before writing any code, use the concepts manually:
+1. Create a workspace directory with markdown files
+2. Add frontmatter signals by hand
+3. Review signals, pick highest-priority node, write artifacts yourself
+4. See if the decomposition/convergence logic produces useful structure
+
+This validates the model before investing in tooling.
+
+### Phase 2: CLI Scaffolding
+
+Build the basic commands:
+- `stig init` — parse goal, create initial nodes (can use AI or templates)
+- `stig status` — read all nodes, compute priorities, display heatmap
+- `stig weave` — concatenate nodes into readable spec (simple version: just cat them together with headers)
+
+No AI in the loop yet. Human does the pulse work manually.
+
+### Phase 3: AI-Assisted Pulses
+
+Add `stig pulse`:
+- Select target node based on signals
+- Spawn model call(s) to produce artifacts
+- Write artifacts as new nodes
+- Update signals
+
+Human reviews and commits after each pulse.
+
+### Phase 4: Autonomous Runs
+
+Add `stig run`:
+- Loop pulses until stability threshold
+- Human reviews final output, not intermediate steps
+
+Add foundation alignment check on artifact commit.
+
+### Phase 5: Parallel Execution
+
+Spawn multiple workers per pulse on independent nodes. Add job queue, result aggregation, conflict detection across concurrent writes.
+
+This is where the cost savings materialize.
+
+---
+
+## Open Questions (For Us to Decide)
+
+1. **What model for initial decomposition?** Currently assuming Gemini 3 Pro. Could test with Claude Opus, GPT-4.
+
+2. **How many cheap workers per pulse?** Starting guess: 3-5 per target node. Tune based on results.
+
+3. **Stability thresholds?** Current proposal: need ≤ 3, confidence ≥ 7, conflict ≤ 2. These are guesses.
+
+4. **Foundation alignment check—how strict?** Too strict and everything gets flagged. Too loose and culture doesn't propagate.
+
+5. **History and learning?** Should past workspaces inform future decomposition? Could train a cheap model on successful specs.
+
+---
+
+## Connection to Hierophage Foundation
+
+This system embodies foundation principles:
+
+**Language as shared environment**: The workspace is language. Nodes are speech acts. Signals are the traces that shape future speech.
+
+**Institution, not tool**: The workspace accumulates precedent, enforces norms (foundation check), maintains memory (history), and legitimizes claims (evidence requirement).
+
+**Mercy over punishment**: Low confidence doesn't mean bad—it means "needs more work." Decomposition gives uncertainty room to resolve. Nothing is deleted for being wrong.
+
+**Persuasion everywhere**: Signals route attention. The decomposition rules embed values about what matters. The foundation check ensures artifacts carry the culture.
+
+**Play as substrate**: Small tasks, clear rules, visible progress. The heatmap cooling as the spec stabilizes is satisfying in the way games are satisfying.
+
+The swarm doesn't replace judgment. It distributes judgment across many small acts, each locally sensible, collectively coherent. That's what institutions do. That's what we're building.
+
+---
+
+*Document version: 2. Expanded with architecture and worked example. Ready for review.*
