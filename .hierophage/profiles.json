@@ -1,0 +1,39 @@
+{
+  "profiles": {
+    "vanilla": {
+      "description": "Standard gemini-cli experience",
+      "systemPrompt": "default"
+    },
+
+    "bare": {
+      "description": "No system prompt - raw model",
+      "systemPrompt": "~/.hierophage/profiles/bare/system.md",
+      "promptSections": {
+        "PREAMBLE": false,
+        "COREMEMANDATES": false,
+        "PRIMARYWORKFLOWS_PREFIX": false,
+        "PRIMARYWORKFLOWS_SUFFIX": false,
+        "OPERATIONALGUIDELINES": false,
+        "SANDBOX": false,
+        "GIT": false,
+        "FINALREMINDER": false
+      },
+      "userMemory": false
+    },
+
+    "ritual": {
+      "description": "Institutional ritual system",
+      "systemPrompt": "~/.hierophage/profiles/ritual/system.md"
+    },
+
+    "kawazu": {
+      "description": "Simple helpful assistant for learning",
+      "systemPrompt": "~/.hierophage/profiles/kawazu/system.md",
+      "settings": {
+        "approvalMode": "auto_edit"
+      }
+    }
+  },
+
+  "default": "vanilla"
+}

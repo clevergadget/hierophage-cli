@@ -1,20 +1,54 @@
-# Gemini CLI
+# Hierophage CLI
 
-## HIEROPHAGE CLI FORWARD BASE
+**A fork of [gemini-cli](https://github.com/google-gemini/gemini-cli) exploring AI as institution rather than tool.**
 
-### Problem & Strategy
+[![License](https://img.shields.io/github/license/google-gemini/gemini-cli)](https://github.com/google-gemini/gemini-cli/blob/main/LICENSE)
 
-Hierophage-CLI is a fork of Gemini CLI with custom prompts and tweaks. When pulling
-upstream updates, the `package.json` bin entry gets overwritten, breaking the
-`hierophage` command (reverting to `gemini`).
+---
 
-**Solution**: Use a wrapper script approach. The `hierophage` command will always be
-defined in package.json, and it points to a wrapper that calls the underlying gemini
-binary. This allows upstream merges without command conflicts.
+## What This Is
 
-### Setup
+Hierophage-CLI takes the gemini-cli foundation and transforms it into something different: a **minimal institution for emergent judgment**.
 
-**Requirements**: Node.js 20+
+The core CLI functionality—file operations, shell commands, model access—comes entirely from gemini-cli. What we're building lives in the prompt stack, the persistent state layer, and the interaction rituals.
+
+### The Premise
+
+Language is a shared operating environment. Humans and machines co-inhabit it. Most AI tools optimize for task completion. This one optimizes for **context retention, ethical durability under load, and speech that binds**.
+
+Key ideas (see `docs/foundation.md` for the full framework):
+
+- **Thee-Seeks**: A context culture based on mutual grace and mercy—not sentiment, but robustness mechanisms
+- **The heroes have the advantage**: Good AI swims with the current of literature and alignment; bad AI swims against it
+- **Memory that matters**: Revision without erasure; precedent that accumulates
+- **Play as substrate**: Making effort inhabitable through constructed significance
+
+### What's Implemented
+
+- **Profile system**: Radically different CLI experiences via `--profile` flag
+- **Prompts sync**: LLM-assisted merging of upstream changes with user preferences
+- **State persistence**: MCP server for institutional memory (user profiles, directive tracking)
+- **Habit tracking**: Streak-based system for installing recurring behaviors (21-day graduation)
+- **Ritual profile**: The primary entry point—issues directives, tracks compliance, classifies failure without shame
+
+### What's Speculative
+
+- Constitution and precedent system (formal decision records)
+- The Emissary (Discord bot for push-based check-ins)
+- Pattern analysis across compliance data
+- Narrative construction that shapes future behavior
+
+See `docs/foundation.md` for the full framework and `docs/traces.md` for deferred work.
+
+### Development Model
+
+The software develops itself through the user. AI reads the foundation, proposes changes, implements, and instructs. User uses the software and reports experience. See `docs/development-cycle.md` for the full process.
+
+---
+
+## Installation
+
+**Requirements:** Node.js 20+
 
 ```bash
 git clone https://github.com/clevergadget/hierophage-cli
@@ -23,18 +57,95 @@ npm install              # Sets up upstream remote and builds
 npm install -g           # Make 'hierophage' globally available
 ```
 
-The `postinstall` hook automatically:
-- Adds the upstream remote (if not already present)
-- Runs `npm run bundle` to build the CLI
+The `postinstall` hook automatically adds the upstream remote and runs the build.
 
-### Daily Workflow
+---
+
+## Usage
 
 ```bash
-# Make changes, commit
-git add .
-git commit -m "Your changes"
+hierophage
+```
 
-# Pull upstream updates (wrapper survives intact)
+For full CLI documentation (commands, authentication, MCP servers, etc.), see the [gemini-cli docs](https://geminicli.com/docs/).
+
+---
+
+## Profiles
+
+Hierophage supports multiple profiles for radically different use cases:
+
+| Profile | Description |
+|---------|-------------|
+| `vanilla` | Standard gemini-cli (default) |
+| `bare` | No system prompt—raw model |
+| `ritual` | Institutional ritual system |
+| `kawazu` | Simple learning assistant |
+
+### Setup Profiles
+
+```bash
+npm run hierophage:install   # Copy templates to ~/.hierophage/
+```
+
+### Select a Profile
+
+```bash
+hierophage --profile ritual     # Use ritual profile
+hierophage -P kawazu            # Use kawazu profile
+hierophage -P bare              # No system prompt
+hierophage                      # Default (vanilla)
+```
+
+### Profile Resolution Priority
+
+1. `--profile` / `-P` command line flag
+2. `HIEROPHAGE_PROFILE` environment variable
+3. `.hierophage/profile` file in current directory
+4. Default from `~/.hierophage/profiles.json`
+
+### Customize Profiles
+
+Edit `~/.hierophage/profiles.json` to define profiles. Each profile can specify:
+- `systemPrompt`: Path to custom system.md, `"default"`, or `"none"`
+- `promptSections`: Toggle individual gemini-cli prompt sections
+- `settings`: Override CLI settings
+
+See `docs/traces.md` for deferred features and future plans.
+
+---
+
+## The Ritual Profile
+
+The ritual profile is the primary entry point for the hierophage system. It transforms the CLI into an institutional presence that:
+
+- **Issues directives** without justification (the persuasion happened before this session began)
+- **Tracks habits** with streak-based graduation (21 days default)
+- **Classifies failure** without shame (fear, fatigue, ambiguity, resentment, misalignment, incoherence)
+- **Accumulates memory** via MCP state server
+
+### First Use
+
+```bash
+npm run hierophage:install   # Install profiles and MCP servers
+hierophage --profile ritual  # Start the ritual session
+```
+
+On first use, the system enters **intake mode** to gather context (age, health, delegation scope). After intake, it issues your first directive.
+
+### Check-ins
+
+Return periodically. Report on your directives. The system tracks what works and what doesn't, calibrating future directives to your actual patterns.
+
+### State Persistence
+
+The ritual profile uses an MCP server for state persistence. User data lives in `~/.hierophage/state/user-profile.json`. The install script configures `~/.gemini/settings.json` automatically.
+
+---
+
+## Staying Updated with Upstream
+
+```bash
 git fetch upstream
 git merge upstream/main
 npm install
@@ -431,6 +542,40 @@ See the [Uninstall Guide](docs/cli/uninstall.md) for removal instructions.
 
 ---
 
-<p align="center">
-  Built with ❤️ by Google and the open source community
-</p>
+## Project Structure
+
+```
+docs/
+  foundation.md              # Philosophical foundation, practical purpose, speculative directions
+  development-cycle.md       # How the software develops itself through the user
+  active-plan.md             # Current development direction (AI-maintained)
+  gemini-systems-reference.md # Technical reference for gemini-cli extension points
+  traces.md                  # Institutional memory: decisions, deferred work, precedents
+  discord-bot-spec.md        # Spec for The Emissary (push-based check-ins)
+.hierophage/
+  bin/hierophage.js          # Profile-aware wrapper
+  bin/prompts-sync.js        # LLM-assisted prompt merging
+  install-profiles.js        # Install profiles and MCP servers to ~/.hierophage/
+  profiles.json              # Profile definitions
+  profiles/*/system.md       # Per-profile system prompts
+  mcp-servers/               # MCP servers for state persistence
+    state-server.js          # Profile, directive, and habit tracking
+    package.json             # MCP server dependencies
+CLAUDE.md                    # Context for AI instances working on this
+~/.hierophage/               # User's installed hierophage data (created by install script)
+  state/user-profile.json    # User profile and directive history (runtime data)
+```
+
+---
+
+## Attribution
+
+This project is built on [gemini-cli](https://github.com/google-gemini/gemini-cli) by Google, licensed under Apache 2.0. The overwhelming majority of the code is their work. We're grateful for the foundation.
+
+What's original here: the philosophical framework, the spec for institutional features, and the prompt/state layers we're building on top.
+
+---
+
+## License
+
+Apache 2.0, inherited from gemini-cli. See [LICENSE](LICENSE).
