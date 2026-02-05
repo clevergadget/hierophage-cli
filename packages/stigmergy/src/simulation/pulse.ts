@@ -410,12 +410,15 @@ export async function run(
 
         // Determine if resolver should engage
         const enteredCrystallization = currentPhase === 'crystallization' && lastPhase !== 'crystallization';
-        const highConflictDensity = conflictDensity > 0.1; // >10% nodes in conflict
+        const highConflictDensity = conflictDensity > 0.05; // >5% nodes in conflict (lowered from 10%)
+        const periodicSweep = Math.floor(pulses.length / 50) > Math.floor(prevTotal / 50); // Every 50 pulses
         const hasConflicts = stats.nodes_in_conflict > 0;
 
-        // Phase gate: entering crystallization with conflicts
-        // Conflict density: too many conflicts relative to tree size
-        const shouldResolve = hasConflicts && (enteredCrystallization || highConflictDensity);
+        // Triggers:
+        // 1. Phase gate: entering crystallization with conflicts
+        // 2. Conflict density: >5% nodes in conflict
+        // 3. Periodic sweep: every 50 pulses, resolve any accumulated conflicts
+        const shouldResolve = hasConflicts && (enteredCrystallization || highConflictDensity || periodicSweep);
 
         if (shouldResolve) {
           // Find conflict nodes, sorted by conflict level descending

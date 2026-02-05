@@ -107,8 +107,8 @@ export const DEFAULT_EVIDENCE: NodeEvidence = {
 };
 
 export const DEFAULT_BUDGET: BudgetConfig = {
-  max_api_calls: 200,
-  max_input_tokens: 500_000,
+  max_api_calls: 500,
+  max_input_tokens: 1_000_000,
   node_temperature_limit: 5,
 };
 
