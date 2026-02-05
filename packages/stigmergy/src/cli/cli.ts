@@ -147,12 +147,17 @@ yargs(hideBin(process.argv))
           type: 'boolean',
           describe: 'Confirm real AI run (required when using real AI agents)',
           default: false,
+        })
+        .option('parallel', {
+          type: 'number',
+          describe: 'Number of parallel agents (default: 4)',
         }),
     async (argv) => {
       await runCommand(STIG_ROOT, {
         maxPulses: argv['max-pulses'] as number | undefined,
         dryRun: argv['dry-run'] as boolean,
         confirm: argv.confirm as boolean,
+        parallel: argv.parallel as number | undefined,
       });
     },
   )

@@ -11,7 +11,7 @@ import type { RunResult } from '../simulation/pulse.js';
 
 export async function runCommand(
   stigRoot: string,
-  options: { maxPulses?: number; dryRun?: boolean; confirm?: boolean },
+  options: { maxPulses?: number; dryRun?: boolean; confirm?: boolean; parallel?: number },
 ): Promise<void> {
   const workspacePath = join(stigRoot, 'workspace');
 
@@ -23,6 +23,9 @@ export async function runCommand(
   const config = { ...loadConfig(stigRoot), budget: { ...loadConfig(stigRoot).budget } };
   if (options.maxPulses !== undefined) {
     config.max_pulses = options.maxPulses;
+  }
+  if (options.parallel !== undefined) {
+    config.max_concurrent_workers = options.parallel;
   }
 
   // Agent selection: dry-run uses MockSpore, otherwise FlashSpore
@@ -54,8 +57,9 @@ export async function runCommand(
   }
 
   const modeLabel = isDryRun ? chalk.cyan('[DRY RUN] ') : '';
+  const parallelLabel = config.max_concurrent_workers > 1 ? ` | parallel: ${config.max_concurrent_workers}` : '';
   console.log(
-    `${modeLabel}${chalk.dim(`Agent: ${agent.name} | max pulses: ${config.max_pulses} | ` +
+    `${modeLabel}${chalk.dim(`Agent: ${agent.name} | max pulses: ${config.max_pulses}${parallelLabel} | ` +
     `budget: ${config.budget.max_api_calls} calls, ${(config.budget.max_input_tokens / 1000).toFixed(0)}k tokens`)}`,
   );
   console.log('');

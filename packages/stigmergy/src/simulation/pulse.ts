@@ -305,28 +305,35 @@ export async function run(
     coverage_failures: coverageFailures,
   });
 
-  for (let i = 1; i <= config.max_pulses; i++) {
+  const parallelCount = config.max_concurrent_workers || 1;
+  let pulseNumber = 1;
+
+  while (pulseNumber <= config.max_pulses) {
     // Check stability
     if (isStable(config, workspacePath)) {
       return makeResult('stable');
     }
 
-    // Check budget before each pulse
+    // Check budget before each batch
     const budgetCheck = tracker.checkBudget();
     if (budgetCheck) {
       return makeResult('budget_exceeded', budgetCheck);
     }
 
-    const result = await pulse(stigRoot, agent, i, tracker);
+    // Run batch of pulses in parallel
+    const batchResults = await batchPulse(stigRoot, agent, pulseNumber, tracker, parallelCount);
 
-    if (!result) {
+    if (batchResults.length === 0) {
       return makeResult('no_target');
     }
 
-    pulses.push(result);
+    pulses.push(...batchResults);
+    pulseNumber += batchResults.length;
 
-    // Maintenance cycle: run every N pulses
-    if (i % MAINTENANCE_INTERVAL === 0) {
+    // Maintenance cycle: run every N pulses (check if we crossed a maintenance boundary)
+    const prevTotal = pulses.length - batchResults.length;
+    const crossedMaintenance = Math.floor(pulses.length / MAINTENANCE_INTERVAL) > Math.floor(prevTotal / MAINTENANCE_INTERVAL);
+    if (crossedMaintenance) {
       const nodes = scanTree(workspacePath);
       const nodeMap = new Map(nodes.map((n) => [n.path, n]));
 
@@ -375,7 +382,7 @@ export async function run(
       }
 
       // 4. Necrophoresis: Grazer prunes dead nodes
-      const grazerReport = grazer.patrol(nodes, workspacePath, i);
+      const grazerReport = grazer.patrol(nodes, workspacePath, pulses.length);
       for (const mutation of grazerReport.mutations) {
         const pruneResult = dispatcher.dispatch(mutation);
         if (pruneResult.success) prunedNodes++;

@@ -112,7 +112,7 @@ export const DEFAULT_BUDGET: BudgetConfig = {
 
 export const DEFAULT_CONFIG: WorkspaceConfig = {
   model: 'gemini-2.5-flash-lite',
-  max_concurrent_workers: 1,
+  max_concurrent_workers: 4,
   workers_per_target: 1,
   max_pulses: 100,
   stability_threshold: {
