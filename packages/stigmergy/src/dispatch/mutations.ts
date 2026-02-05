@@ -34,6 +34,7 @@ export function validateMutation(mutation: Mutation): string | null {
     'UPDATE_CONTENT',
     'UPDATE_SIGNALS',
     'DELETE_NODE',
+    'MERGE_NODES',
   ];
   if (!validTypes.includes(mutation.type)) {
     return `Invalid mutation type: ${mutation.type}`;
@@ -48,6 +49,12 @@ export function validateMutation(mutation: Mutation): string | null {
   if (mutation.type === 'UPDATE_SIGNALS') {
     if (!mutation.payload.signals) {
       return 'UPDATE_SIGNALS requires signals in payload';
+    }
+  }
+
+  if (mutation.type === 'MERGE_NODES') {
+    if (!mutation.payload.merge_sources || mutation.payload.merge_sources.length === 0) {
+      return 'MERGE_NODES requires merge_sources in payload';
     }
   }
 

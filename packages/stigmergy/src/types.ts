@@ -26,7 +26,8 @@ export type MutationType =
   | 'CREATE_NODE'
   | 'UPDATE_CONTENT'
   | 'UPDATE_SIGNALS'
-  | 'DELETE_NODE';
+  | 'DELETE_NODE'
+  | 'MERGE_NODES';
 
 export interface MutationPayload {
   name?: string;
@@ -35,6 +36,8 @@ export interface MutationPayload {
   content?: string;
   isScaffold?: boolean;
   conflict_reason?: string; // Appended to conflict_reasons array when raising conflict
+  // For MERGE_NODES: sources to consume (will be deleted after merge)
+  merge_sources?: string[];
 }
 
 export interface Mutation {

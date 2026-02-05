@@ -115,6 +115,8 @@ function printResult(result: RunResult, config: WorkspaceConfig): void {
   if (result.resolver_attempts > 0) {
     maintenanceStats.push(`${chalk.blue(String(result.resolver_resolutions))}/${result.resolver_attempts} resolved`);
   }
+  if (result.weaver_overlaps > 0) maintenanceStats.push(`${chalk.hex('#FFA500')(String(result.weaver_overlaps))} overlaps`);
+  if (result.synthesis_merges > 0) maintenanceStats.push(`${chalk.hex('#9B59B6')(String(result.synthesis_merges))} synthesized`);
   const maintenanceStr = maintenanceStats.length > 0 ? ` | ${maintenanceStats.join(', ')}` : '';
 
   // Verification stats

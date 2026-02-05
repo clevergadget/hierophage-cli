@@ -41,6 +41,8 @@ export class MutationDispatcher {
           return this.applyUpdateSignals(mutation);
         case 'DELETE_NODE':
           return this.applyDelete(mutation);
+        case 'MERGE_NODES':
+          return this.applyMerge(mutation);
         default:
           return this.fail(mutation, `Unknown mutation type: ${mutation.type}`);
       }
@@ -137,6 +139,49 @@ export class MutationDispatcher {
 
     const fullPath = join(this.workspacePath, path);
     rmSync(fullPath, { recursive: true, force: true });
+    return this.succeed(mutation);
+  }
+
+  /**
+   * MERGE_NODES: Atomic operation that updates target with synthesized content
+   * and deletes source nodes in one transaction.
+   */
+  private applyMerge(mutation: Mutation): MutationResult {
+    const { path, payload } = mutation;
+    const sources = payload.merge_sources ?? [];
+
+    // Validate target exists
+    if (!nodeExists(this.workspacePath, path)) {
+      return this.fail(mutation, `Target node does not exist: ${path}`);
+    }
+
+    // Validate all sources exist
+    for (const source of sources) {
+      if (!nodeExists(this.workspacePath, source)) {
+        return this.fail(mutation, `Source node does not exist: ${source}`);
+      }
+    }
+
+    // 1. Update target with synthesized content and boosted signals
+    const target = readNode(this.workspacePath, path);
+    if (payload.content !== undefined) {
+      target.content = payload.content;
+    }
+    if (payload.signals) {
+      target.signals = {
+        ...target.signals,
+        ...payload.signals,
+        last_pulse: new Date().toISOString(),
+      };
+    }
+    writeNode(this.workspacePath, path, target);
+
+    // 2. Delete all source nodes (consumed by merge)
+    for (const source of sources) {
+      const fullPath = join(this.workspacePath, source);
+      rmSync(fullPath, { recursive: true, force: true });
+    }
+
     return this.succeed(mutation);
   }
 

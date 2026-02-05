@@ -8,6 +8,8 @@ import { Grazer } from '../agents/grazer.js';
 import { Scout } from '../agents/scout.js';
 import { Verifier } from '../agents/verifier.js';
 import { Resolver } from '../agents/resolver.js';
+import { Synthesizer } from '../agents/synthesizer.js';
+import { Weaver } from '../agents/weaver.js';
 import { createMutation } from '../dispatch/mutations.js';
 import type { Agent } from '../agents/agent.js';
 import type { BudgetSnapshot } from '../budget/tracker.js';
@@ -50,6 +52,8 @@ export interface RunResult {
   coverage_failures: number;
   resolver_attempts: number;
   resolver_resolutions: number;
+  synthesis_merges: number;
+  weaver_overlaps: number;
 }
 
 /**
@@ -101,7 +105,13 @@ export async function pulse(
   const stats = getTreeStats(nodes);
   const phase = getColonyPhase(stats);
   const targetDepth = target.path === '.' ? 0 : target.path.split('/').length;
-  const colony = { phase, stats, targetDepth };
+
+  // Get top-level concepts for cross-branch awareness
+  const topLevelConcepts = nodes
+    .filter(n => n.path !== '.' && !n.path.includes('/'))
+    .map(n => n.name);
+
+  const colony = { phase, stats, targetDepth, topLevelConcepts };
 
   // Get existing children for the agent
   const childPaths = listChildren(workspacePath, target.path);
@@ -292,11 +302,15 @@ export async function run(
   let coverageFailures = 0;
   let resolverAttempts = 0;
   let resolverResolutions = 0;
+  let synthesisMerges = 0;
+  let weaverOverlaps = 0;
 
   // Initialize Verifier and Resolver if API key available
   const apiKey = process.env['GEMINI_API_KEY'];
   const verifier = apiKey ? new Verifier('gemini-2.5-flash-lite', apiKey) : null;
   const resolver = apiKey ? new Resolver('gemini-2.5-flash-lite', apiKey) : null;
+  const synthesizer = apiKey ? new Synthesizer('gemini-2.5-flash-lite', apiKey) : null;
+  const weaver = apiKey ? new Weaver('gemini-2.5-flash-lite', apiKey) : null;
 
   // Track phase for crystallization gate
   let lastPhase: ColonyPhase = 'germination';
@@ -317,6 +331,8 @@ export async function run(
     coverage_failures: coverageFailures,
     resolver_attempts: resolverAttempts,
     resolver_resolutions: resolverResolutions,
+    synthesis_merges: synthesisMerges,
+    weaver_overlaps: weaverOverlaps,
   });
 
   const parallelCount = config.max_concurrent_workers || 1;
@@ -450,6 +466,28 @@ export async function run(
         }
 
         lastPhase = currentPhase;
+      }
+
+      // 6. Weaver: detect cross-branch semantic overlaps (every 30 pulses)
+      const crossedWeaverInterval = Math.floor(pulses.length / 30) > Math.floor(prevTotal / 30);
+      if (weaver && crossedWeaverInterval) {
+        const weaveResult = await weaver.weave(nodes);
+        for (const mutation of weaveResult.mutations) {
+          dispatcher.dispatch(mutation);
+        }
+        weaverOverlaps += weaveResult.overlaps.filter(o => o.recommendation !== 'keep_separate').length;
+      }
+
+      // 7. Synthesizer: merge stable semantic duplicates (every 30 pulses)
+      const crossedSynthInterval = Math.floor(pulses.length / 30) > Math.floor(prevTotal / 30);
+      if (synthesizer && crossedSynthInterval) {
+        // Re-scan tree after weaver may have flagged nodes
+        const freshNodes = scanTree(workspacePath);
+        const synthResult = await synthesizer.synthesize(freshNodes, { maxGroups: 5 });
+        for (const mutation of synthResult.mutations) {
+          dispatcher.dispatch(mutation);
+        }
+        synthesisMerges += synthResult.duplicateGroups.filter(g => g.action === 'synthesized').length;
       }
     }
   }

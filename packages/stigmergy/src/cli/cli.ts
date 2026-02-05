@@ -19,6 +19,8 @@ import { scoutCommand } from './scout-cmd.js';
 import { grazerCommand } from './grazer-cmd.js';
 import { resolverCommand } from './resolver-cmd.js';
 import { verifyCommand } from './verify-cmd.js';
+import { synthesizeCommand } from './synthesize-cmd.js';
+import { weaveCommand } from './weave-cmd.js';
 
 // Load .env.local from package root if it exists (overrides shell env)
 // CLI runs from dist/src/cli/, so go up 3 levels to reach package root
@@ -320,6 +322,49 @@ yargs(hideBin(process.argv))
         path: argv.path as string | undefined,
         coverage: argv.coverage as boolean,
         max: argv.max as number,
+      });
+    },
+  )
+  .command(
+    'synthesize',
+    'Synthesize semantic duplicates into unified nodes',
+    (y) =>
+      y
+        .option('dry-run', {
+          type: 'boolean',
+          describe: 'Preview without applying changes',
+          default: false,
+        })
+        .option('confirm', {
+          type: 'boolean',
+          describe: 'Confirm real synthesis',
+          default: false,
+        })
+        .option('max-groups', {
+          type: 'number',
+          describe: 'Maximum sibling groups to analyze',
+          default: 10,
+        }),
+    async (argv) => {
+      await synthesizeCommand(getStigRoot(argv), {
+        dryRun: argv['dry-run'] as boolean,
+        confirm: argv.confirm as boolean,
+        maxGroups: argv['max-groups'] as number,
+      });
+    },
+  )
+  .command(
+    'weave',
+    'Find cross-branch semantic overlaps',
+    (y) =>
+      y.option('apply', {
+        type: 'boolean',
+        describe: 'Apply conflict signals to overlapping nodes',
+        default: false,
+      }),
+    async (argv) => {
+      await weaveCommand(getStigRoot(argv), {
+        apply: argv.apply as boolean,
       });
     },
   )

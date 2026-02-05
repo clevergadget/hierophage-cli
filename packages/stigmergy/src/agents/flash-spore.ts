@@ -84,6 +84,21 @@ Slugs must NOT repeat the parent name. Each path must be unique.
 - No DELETE_NODE mutations.
 - Each mutation path must be unique.
 
+## Semantic Deduplication (CRITICAL)
+
+Before creating a child, check if a sibling with the same MEANING already exists.
+Semantic equivalents must NOT coexist:
+- "Create Task" and "Task Creation" → same concept, keep one
+- "Delete Task" and "Task Deletion" → same concept, keep one
+- "Filter Tasks" under different parents → redundant, consolidate
+
+When you see an existing child that covers the same concept:
+1. Do NOT create a duplicate child with slightly different wording
+2. Instead, UPDATE_CONTENT on the existing child to add your insights
+3. Or UPDATE_SIGNALS to adjust its priority
+
+The tree should have one canonical location for each concept. Redundant nodes waste effort and create confusion.
+
 ## Pragmatism Rules (CRITICAL)
 
 You are specifying the **most likely app**, not the theoretically complete solution.
@@ -259,7 +274,7 @@ export class FlashSpore implements Agent {
     const zeroCost: AgentCost = { api_calls: 1, input_tokens: 0, output_tokens: 0 };
 
     try {
-      const userPrompt = buildPrompt(target, context, children);
+      const userPrompt = buildPrompt(target, context, children, colony?.topLevelConcepts);
       const systemPrompt = buildSystemPrompt(colony);
 
       const response = await this.ai.models.generateContent({
@@ -296,13 +311,27 @@ export class FlashSpore implements Agent {
 }
 
 /**
- * Build the user prompt from the target node, context chain, and children.
+ * Build the user prompt from the target node, context chain, children, and top-level concepts.
  */
-export function buildPrompt(target: StigNode, context: string, children: StigNode[]): string {
+export function buildPrompt(
+  target: StigNode,
+  context: string,
+  children: StigNode[],
+  topLevelConcepts?: string[],
+): string {
   const parts: string[] = [];
 
   parts.push('## Context Chain\n');
   parts.push(context);
+
+  // Show existing top-level concepts for cross-branch awareness
+  if (topLevelConcepts && topLevelConcepts.length > 0) {
+    parts.push('\n## Existing Top-Level Concepts\n');
+    parts.push('These concepts already exist at the top level of the tree:');
+    parts.push(topLevelConcepts.map(c => `- ${c}`).join('\n'));
+    parts.push('\n**Important:** If your decomposition would create something that overlaps with these, integrate with the existing concept instead of creating a duplicate.');
+  }
+
   parts.push('\n## Target Node\n');
   parts.push(`Path: ${target.path}`);
   parts.push(`Name: ${target.name}`);

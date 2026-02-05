@@ -27,6 +27,7 @@ export interface ColonyContext {
   phase: ColonyPhase;
   stats: TreeStats;
   targetDepth: number;
+  topLevelConcepts?: string[]; // Names of root's children for cross-branch awareness
 }
 
 /**
