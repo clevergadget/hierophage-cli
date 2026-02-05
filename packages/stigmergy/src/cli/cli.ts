@@ -33,7 +33,7 @@ yargs(hideBin(process.argv))
           describe: 'The goal for this workspace',
           demandOption: true,
         })
-        .option('no-scaffold', {
+        .option('skip-scaffolds', {
           type: 'boolean',
           describe: 'Skip creating scaffold nodes',
           default: false,
@@ -42,11 +42,18 @@ yargs(hideBin(process.argv))
           type: 'boolean',
           describe: 'Use LLM to identify goal-specific concerns (instead of static scaffolds)',
           default: false,
+        })
+        .option('context', {
+          type: 'array',
+          alias: 'c',
+          describe: 'Implementation constraints (e.g., -c "TypeScript" -c "Node.js")',
+          default: [],
         }),
     async (argv) => {
       await initCommand(argv.goal as string, STIG_ROOT, {
-        scaffold: !argv['no-scaffold'],
+        scaffold: !argv['skip-scaffolds'],
         analyze: argv.analyze as boolean,
+        context: argv.context as string[],
       });
     },
   )

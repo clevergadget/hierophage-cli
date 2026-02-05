@@ -19,6 +19,7 @@ const STATIC_SCAFFOLDS: Array<{ name: string; content: string }> = [
 export interface InitOptions {
   scaffold?: boolean;
   analyze?: boolean;
+  context?: string[]; // Implementation constraints like "TypeScript", "React", "Node.js"
 }
 
 export async function initCommand(goal: string, stigRoot: string, options: InitOptions): Promise<void> {
@@ -37,6 +38,19 @@ export async function initCommand(goal: string, stigRoot: string, options: InitO
   // Initialize mutations log
   writeFileSync(join(stigRoot, 'mutations.log'), '', 'utf-8');
 
+  // Build root content with optional implementation context
+  let rootContent = `# Goal\n\n${goal}`;
+
+  if (options.context && options.context.length > 0) {
+    rootContent += `\n\n# Given Context\n\nThe following implementation decisions are already made:\n`;
+    for (const constraint of options.context) {
+      rootContent += `- ${constraint}\n`;
+    }
+    rootContent += `\nDo not spec alternatives to these — they are settled.`;
+  }
+
+  rootContent += `\n\n# Foundation\n\nSee ${DEFAULT_CONFIG.foundation_path} for constitutional authority.`;
+
   // Write root node directly (before dispatcher exists)
   const rootNode: StigNode = {
     path: '.',
@@ -49,7 +63,7 @@ export async function initCommand(goal: string, stigRoot: string, options: InitO
       last_pulse: new Date().toISOString(),
     },
     evidence: { ...DEFAULT_EVIDENCE },
-    content: `# Goal\n\n${goal}\n\n# Foundation\n\nSee ${DEFAULT_CONFIG.foundation_path} for constitutional authority.`,
+    content: rootContent,
     isScaffold: false,
   };
   writeNode(workspacePath, '.', rootNode);
