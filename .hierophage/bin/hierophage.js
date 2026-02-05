@@ -182,6 +182,15 @@ async function handleSubcommand(args) {
     });
     return new Promise((resolve) => child.on('exit', resolve));
   }
+  if (args[0] === 'stig') {
+    // Delegate to stigmergy CLI
+    const stigCli = join(__dirname, '../../packages/stigmergy/dist/src/cli/cli.js');
+    const child = spawn('node', [stigCli, ...args.slice(1)], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+    return new Promise((resolve) => child.on('exit', resolve));
+  }
   return null; // Not a subcommand
 }
 
