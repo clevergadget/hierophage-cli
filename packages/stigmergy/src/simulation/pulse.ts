@@ -7,10 +7,12 @@ import { BudgetTracker } from '../budget/tracker.js';
 import { Grazer } from '../agents/grazer.js';
 import { Scout } from '../agents/scout.js';
 import { Verifier } from '../agents/verifier.js';
+import { Resolver } from '../agents/resolver.js';
 import { createMutation } from '../dispatch/mutations.js';
 import type { Agent } from '../agents/agent.js';
 import type { BudgetSnapshot } from '../budget/tracker.js';
 import type { MutationResult, WorkspaceConfig, TreeStats, StigNode } from '../types.js';
+import type { ColonyPhase } from '../tree/scanner.js';
 
 export interface PulseResult {
   pulse_number: number;
@@ -46,6 +48,8 @@ export interface RunResult {
   stability_failures: number;
   coverage_checks: number;
   coverage_failures: number;
+  resolver_attempts: number;
+  resolver_resolutions: number;
 }
 
 /**
@@ -286,10 +290,16 @@ export async function run(
   let stabilityFailures = 0;
   let coverageChecks = 0;
   let coverageFailures = 0;
+  let resolverAttempts = 0;
+  let resolverResolutions = 0;
 
-  // Initialize Verifier if API key available (optional LLM quality gates)
+  // Initialize Verifier and Resolver if API key available
   const apiKey = process.env['GEMINI_API_KEY'];
   const verifier = apiKey ? new Verifier('gemini-2.5-flash-lite', apiKey) : null;
+  const resolver = apiKey ? new Resolver('gemini-2.5-flash-lite', apiKey) : null;
+
+  // Track phase for crystallization gate
+  let lastPhase: ColonyPhase = 'germination';
 
   const makeResult = (reason: TerminationReason, detail?: string): RunResult => ({
     pulses,
@@ -305,6 +315,8 @@ export async function run(
     stability_failures: stabilityFailures,
     coverage_checks: coverageChecks,
     coverage_failures: coverageFailures,
+    resolver_attempts: resolverAttempts,
+    resolver_resolutions: resolverResolutions,
   });
 
   const parallelCount = config.max_concurrent_workers || 1;
@@ -388,6 +400,53 @@ export async function run(
       for (const mutation of grazerReport.mutations) {
         const pruneResult = dispatcher.dispatch(mutation);
         if (pruneResult.success) prunedNodes++;
+      }
+
+      // 5. Auto-Resolver: resolve conflicts when conditions trigger
+      if (resolver) {
+        const stats = getTreeStats(nodes);
+        const currentPhase = getColonyPhase(stats);
+        const conflictDensity = stats.total_nodes > 0 ? stats.nodes_in_conflict / stats.total_nodes : 0;
+
+        // Determine if resolver should engage
+        const enteredCrystallization = currentPhase === 'crystallization' && lastPhase !== 'crystallization';
+        const highConflictDensity = conflictDensity > 0.1; // >10% nodes in conflict
+        const hasConflicts = stats.nodes_in_conflict > 0;
+
+        // Phase gate: entering crystallization with conflicts
+        // Conflict density: too many conflicts relative to tree size
+        const shouldResolve = hasConflicts && (enteredCrystallization || highConflictDensity);
+
+        if (shouldResolve) {
+          // Find conflict nodes, sorted by conflict level descending
+          const conflictNodes = nodes
+            .filter((n) => n.signals.conflict > 0)
+            .sort((a, b) => b.signals.conflict - a.signals.conflict);
+
+          // Resolve up to 5 per maintenance cycle
+          const toResolve = conflictNodes.slice(0, 5);
+          for (const node of toResolve) {
+            resolverAttempts++;
+
+            // Get siblings and parent for context
+            const parentPath = node.path.includes('/') ? node.path.split('/').slice(0, -1).join('/') || '.' : '.';
+            const siblings = nodes.filter(
+              (n) => n.path !== node.path && n.path.startsWith(parentPath + '/') && !n.path.slice(parentPath.length + 1).includes('/'),
+            );
+            const parent = nodeMap.get(parentPath);
+
+            const result = await resolver.resolve(node, siblings, parent?.content);
+
+            if (result.resolved && result.mutations.length > 0) {
+              for (const mutation of result.mutations) {
+                dispatcher.dispatch(mutation);
+              }
+              resolverResolutions++;
+            }
+          }
+        }
+
+        lastPhase = currentPhase;
       }
     }
   }

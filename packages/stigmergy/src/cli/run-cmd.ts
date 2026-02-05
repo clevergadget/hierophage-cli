@@ -112,6 +112,9 @@ function printResult(result: RunResult, config: WorkspaceConfig): void {
   if (result.pruned_nodes > 0) maintenanceStats.push(`${chalk.magenta(String(result.pruned_nodes))} pruned`);
   if (result.scout_fixes > 0) maintenanceStats.push(`${chalk.yellow(String(result.scout_fixes))} scout fixes`);
   if (result.propagations > 0) maintenanceStats.push(`${chalk.cyan(String(result.propagations))} propagations`);
+  if (result.resolver_attempts > 0) {
+    maintenanceStats.push(`${chalk.blue(String(result.resolver_resolutions))}/${result.resolver_attempts} resolved`);
+  }
   const maintenanceStr = maintenanceStats.length > 0 ? ` | ${maintenanceStats.join(', ')}` : '';
 
   // Verification stats
