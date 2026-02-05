@@ -166,7 +166,8 @@ describe('run', () => {
 
     const agent = new MockSpore();
     // 3 scaffolds decompose deeper, need more pulses
-    const config: WorkspaceConfig = { ...DEFAULT_CONFIG, max_pulses: 100 };
+    // Use parallel: 4 for deterministic convergence in tests
+    const config: WorkspaceConfig = { ...DEFAULT_CONFIG, max_pulses: 100, max_concurrent_workers: 4 };
     const result = await run(stigRoot, agent, config);
 
     expect(result.terminated_reason).toBe('stable');

@@ -21,8 +21,9 @@ import { resolverCommand } from './resolver-cmd.js';
 import { verifyCommand } from './verify-cmd.js';
 
 // Load .env.local from package root if it exists (overrides shell env)
+// CLI runs from dist/src/cli/, so go up 3 levels to reach package root
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const envPath = join(__dirname, '..', '..', '.env.local');
+const envPath = join(__dirname, '..', '..', '..', '.env.local');
 if (existsSync(envPath)) {
   const envContent = readFileSync(envPath, 'utf-8');
   for (const line of envContent.split('\n')) {
@@ -186,7 +187,7 @@ yargs(hideBin(process.argv))
         })
         .option('parallel', {
           type: 'number',
-          describe: 'Number of parallel agents (default: 4)',
+          describe: 'Number of parallel agents (default: 8)',
         }),
     async (argv) => {
       await runCommand(getStigRoot(argv), {
