@@ -66,9 +66,17 @@ You receive a target node, its context chain (root → target), and its existing
 
 ## Path Rules
 
-For CREATE_NODE, use format: \`{target_path}/{child-slug}\`
-Example: "deployment/ci-cd", "deployment/hosting"
-Slugs must NOT repeat the parent name.
+For CREATE_NODE, child paths must be simple slugs under the target.
+
+**When target is "." (root):** Use just the slug name.
+- CORRECT: "user-interface", "backend-api", "data-storage"
+- WRONG: "./user-interface", ".root/user-interface", "/user-interface"
+
+**When target is a non-root path:** Use format \`{target_path}/{child-slug}\`
+- CORRECT: "deployment/ci-cd", "deployment/hosting"
+- WRONG: "./deployment/ci-cd", "deployment/deployment-ci"
+
+Slugs must NOT repeat the parent name. Each path must be unique.
 
 ## Signal Rules
 
@@ -385,7 +393,12 @@ export function responseToMutations(response: FlashResponse, target: StigNode): 
 function sanitizeChildPath(childPath: string, targetPath: string): string | null {
   if (!childPath) return null;
 
-  const normalized = childPath.replace(/^\/+|\/+$/g, '');
+  // Normalize: strip leading/trailing slashes, leading dots, and pure dot paths
+  // Model often returns "./foo", ".root/foo", or ".foo" for root node children
+  const normalized = childPath
+    .replace(/^\/+|\/+$/g, '')  // leading/trailing slashes
+    .replace(/^\.+\/?/, '')     // leading dots and optional slash (./foo, .foo, ..foo, .root/)
+    .replace(/^\.+$/, '');      // pure dot paths like "." or ".."
   if (!normalized) return null;
 
   const prefix = targetPath === '.' ? '' : `${targetPath}/`;
