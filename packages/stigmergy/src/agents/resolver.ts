@@ -194,6 +194,16 @@ function buildPrompt(node: StigNode, siblings: StigNode[], parentContent?: strin
   parts.push(`Path: ${node.path}`);
   parts.push(`Name: ${node.name}`);
   parts.push(`Signals: need=${node.signals.need} confidence=${node.signals.confidence} conflict=${node.signals.conflict}`);
+
+  // Include conflict reasons if available
+  const reasons = node.evidence.conflict_reasons;
+  if (reasons && reasons.length > 0) {
+    parts.push('\n### Conflict Reasons (why this was flagged):');
+    for (const reason of reasons) {
+      parts.push(`- ${reason}`);
+    }
+  }
+
   parts.push(`\nContent:\n${node.content || '(empty)'}`);
 
   if (parentContent) {
@@ -210,7 +220,7 @@ function buildPrompt(node: StigNode, siblings: StigNode[], parentContent?: strin
     }
   }
 
-  parts.push('\nAnalyze the conflict and provide a resolution.');
+  parts.push('\nAnalyze the conflict and provide a resolution. If conflict reasons are listed above, address them directly.');
 
   return parts.join('\n');
 }

@@ -114,6 +114,12 @@ export class MutationDispatcher {
       };
     }
 
+    // Append conflict reason if provided
+    if (payload.conflict_reason) {
+      existing.evidence.conflict_reasons = existing.evidence.conflict_reasons ?? [];
+      existing.evidence.conflict_reasons.push(payload.conflict_reason);
+    }
+
     writeNode(this.workspacePath, path, existing);
     return this.succeed(mutation);
   }

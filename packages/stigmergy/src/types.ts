@@ -10,6 +10,7 @@ export interface NodeEvidence {
   acceptance_criteria: number;
   examples: number;
   risks: number;
+  conflict_reasons?: string[]; // Why conflict was raised, for Resolver to read
 }
 
 export interface StigNode {
@@ -33,6 +34,7 @@ export interface MutationPayload {
   evidence?: Partial<NodeEvidence>;
   content?: string;
   isScaffold?: boolean;
+  conflict_reason?: string; // Appended to conflict_reasons array when raising conflict
 }
 
 export interface Mutation {

@@ -51,6 +51,7 @@ export class Scout {
         report.mutations.push(
           createMutation('UPDATE_SIGNALS', node.path, {
             signals: { conflict: Math.min(10, node.signals.conflict + 2) },
+            conflict_reason: `Scout: Hollow node - content is ${node.content.trim().length} chars with confidence ${node.signals.confidence}`,
           }),
         );
       }
@@ -62,6 +63,7 @@ export class Scout {
           report.mutations.push(
             createMutation('UPDATE_SIGNALS', node.path, {
               signals: { conflict: Math.min(10, node.signals.conflict + 1) },
+              conflict_reason: `Scout: Tautology - content just restates the node name "${node.name}"`,
             }),
           );
         }
@@ -85,14 +87,17 @@ export class Scout {
               b: siblings[j].path,
             });
             // Raise conflict on both
+            const reason = `Scout: Similar sibling - "${siblings[i].name}" overlaps with "${siblings[j].name}", consider merging`;
             report.mutations.push(
               createMutation('UPDATE_SIGNALS', siblings[i].path, {
                 signals: { conflict: Math.min(10, siblings[i].signals.conflict + 1) },
+                conflict_reason: reason,
               }),
             );
             report.mutations.push(
               createMutation('UPDATE_SIGNALS', siblings[j].path, {
                 signals: { conflict: Math.min(10, siblings[j].signals.conflict + 1) },
+                conflict_reason: reason,
               }),
             );
           }

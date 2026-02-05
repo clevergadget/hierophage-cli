@@ -8,6 +8,7 @@ interface VizNode {
   need: number;
   confidence: number;
   conflict: number;
+  conflictReasons: string[];
   isScaffold: boolean;
   isPlaceholder: boolean;
   content: string;
@@ -46,6 +47,7 @@ function buildHierarchy(workspacePath: string, nodes: StigNode[]): VizNode {
       need: node.signals.need,
       confidence: node.signals.confidence,
       conflict: node.signals.conflict,
+      conflictReasons: node.evidence.conflict_reasons ?? [],
       isScaffold: node.isScaffold,
       isPlaceholder: isPlaceholder(node),
       content: node.content,
@@ -55,7 +57,7 @@ function buildHierarchy(workspacePath: string, nodes: StigNode[]): VizNode {
 
   const root = nodes.find((n) => n.path === '.');
   if (!root) {
-    return { name: 'empty', path: '.', need: 0, confidence: 0, conflict: 0, isScaffold: false, isPlaceholder: false, content: '', children: [] };
+    return { name: 'empty', path: '.', need: 0, confidence: 0, conflict: 0, conflictReasons: [], isScaffold: false, isPlaceholder: false, content: '', children: [] };
   }
 
   return buildNode(root);
@@ -361,9 +363,14 @@ export function generateVizHtml(workspacePath: string): string {
   <span class="stat phase-badge" style="background:${phaseColor}22;color:${phaseColor};border:1px solid ${phaseColor}44;padding:2px 10px;border-radius:4px;font-weight:600">${phase.toUpperCase()}</span>
   <span class="stat">Nodes: <span class="val">${stats.total_nodes}</span></span>
   <span class="stat">Stable: <span class="val good">${stats.stable_count}</span></span>
-  <span class="stat">Conflict: <span class="val ${stats.nodes_in_conflict > 0 ? 'bad' : ''}">${stats.nodes_in_conflict}</span></span>
+  <span class="stat conflict-toggle" style="cursor:pointer" onclick="toggleConflictPanel()">Conflict: <span class="val ${stats.nodes_in_conflict > 0 ? 'bad' : ''}">${stats.nodes_in_conflict}</span> ▼</span>
   <span class="stat">Dead: <span class="val ${placeholderCount > 10 ? 'bad' : ''}">${placeholderCount}</span></span>
   <span class="stat">Avg conf: <span class="val">${stats.avg_confidence}</span></span>
+</div>
+
+<div id="conflict-panel" style="display:none;position:fixed;top:56px;left:0;right:340px;background:#1a1a24;border-bottom:1px solid #2a2a3a;padding:12px 24px;z-index:99;max-height:200px;overflow-y:auto;">
+  <div style="font-size:11px;color:#fbbf24;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Nodes with Conflict</div>
+  <div id="conflict-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
 </div>
 
 <div id="canvas"></div>
@@ -375,6 +382,7 @@ export function generateVizHtml(workspacePath: string): string {
     <h2 id="node-name"></h2>
     <div class="path" id="node-path"></div>
     <div id="node-badges" style="margin-bottom:12px"></div>
+    <div id="conflict-reasons"></div>
     <div>
       <div class="signal-bar">
         <label>Need</label>
@@ -690,6 +698,18 @@ function showDetail(d) {
   document.getElementById('bar-conflict').style.width = (data.conflict * 10) + '%';
   document.getElementById('val-conflict').textContent = data.conflict;
 
+  // Show conflict reasons if any
+  let reasonsHtml = '';
+  if (data.conflictReasons && data.conflictReasons.length > 0) {
+    reasonsHtml = '<div style="margin-top:12px;padding:8px;background:#fbbf2411;border:1px solid #fbbf2433;border-radius:4px;">';
+    reasonsHtml += '<div style="font-size:10px;color:#fbbf24;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Conflict Reasons</div>';
+    for (const reason of data.conflictReasons) {
+      reasonsHtml += '<div style="font-size:11px;color:#a0a0b0;margin-bottom:4px;">• ' + escapeHtml(reason) + '</div>';
+    }
+    reasonsHtml += '</div>';
+  }
+  document.getElementById('conflict-reasons').innerHTML = reasonsHtml;
+
   // Highlight path on graph
   highlightPath(d);
   animateSelection(d);
@@ -754,6 +774,48 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ── Conflict Panel ──
+function buildConflictList() {
+  const conflicts = root.descendants().filter(d => d.data.conflict > 0).sort((a, b) => b.data.conflict - a.data.conflict);
+  const listEl = document.getElementById('conflict-list');
+  if (conflicts.length === 0) {
+    listEl.innerHTML = '<span style="color:#4ade80;font-size:12px;">No conflicts</span>';
+    return;
+  }
+  let html = '';
+  for (const d of conflicts) {
+    const color = d.data.conflict > 2 ? '#fbbf24' : '#806020';
+    html += '<div class="conflict-item" style="background:#12121a;border:1px solid ' + color + '44;border-radius:4px;padding:6px 10px;cursor:pointer;font-size:11px;" data-path="' + d.data.path + '">';
+    html += '<span style="color:' + color + ';font-weight:600;">x:' + d.data.conflict + '</span> ';
+    html += '<span style="color:#a0a0b0;">' + escapeHtml(d.data.name) + '</span>';
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+  // Click to focus node
+  listEl.querySelectorAll('.conflict-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const path = el.getAttribute('data-path');
+      const target = root.descendants().find(d => d.data.path === path);
+      if (target) {
+        showDetail(target);
+        // Pan to node
+        const transform = d3.zoomTransform(svg.node());
+        const x = width / 3 - target.y * transform.k;
+        const y = height / 2 - target.x * transform.k;
+        svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(x, y).scale(transform.k));
+      }
+    });
+  });
+}
+
+let conflictPanelOpen = false;
+function toggleConflictPanel() {
+  conflictPanelOpen = !conflictPanelOpen;
+  const panel = document.getElementById('conflict-panel');
+  panel.style.display = conflictPanelOpen ? 'block' : 'none';
+  if (conflictPanelOpen) buildConflictList();
 }
 </script>
 </body>

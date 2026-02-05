@@ -234,9 +234,11 @@ async function propagateParentSignals(
           if (!coverage.is_covered && !coverage.error) {
             coverageFailures++;
             // Coverage failed - raise conflict on parent to attract attention
+            const gapsText = coverage.gaps?.length ? `: ${coverage.gaps.join(', ')}` : '';
             dispatcher.dispatch(
               createMutation('UPDATE_SIGNALS', node.path, {
                 signals: { conflict: Math.min(10, node.signals.conflict + 2) },
+                conflict_reason: `Verifier: Coverage gap - children don't fully cover parent scope${gapsText}. ${coverage.reasoning}`,
               }),
             );
             continue; // Skip propagation for this node

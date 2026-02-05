@@ -145,7 +145,30 @@ Most productivity tools force you through the same process regardless of complex
 
 ---
 
-## 9. The Economic Moat
+## 9. The Ecology Audit Trail (Conflict Archaeology)
+
+**The Concept:**
+Every conflict raised leaves a reason. Over time, this becomes a dataset of *why things break*.
+
+**The Mechanic:**
+When Scout, Verifier, or any agent raises a conflict signal, it writes a `conflict_reason` string to the node's evidence. These accumulate as an array—an audit trail of every tension that ever existed.
+
+*   *Data:* `["Scout: Hollow node - 12 chars", "Verifier: Coverage gap - children don't address error handling", "Scout: Similar sibling - overlaps with 'data-validation'"]`
+*   *Resolver Reads This:* Instead of inferring what's wrong, it knows exactly what to fix.
+*   *Trend Analysis:* After 1000 trees, patterns emerge. "Coverage gaps" happen 3x more often in "API" branches. "Hollow nodes" cluster around depth 4.
+
+**The Magic:**
+The swarm learns from its own history. We can tune the ecology based on empirical data:
+- "Scout raises too many tautology flags on UI nodes—lower the threshold for UI branches"
+- "Verifier's coverage check is too strict for simple goals—add goal-complexity gating"
+- "Hollow nodes at depth 4+ are usually fine—Grazer should ignore them"
+
+**The Moonshot:**
+A meta-agent that reads conflict reason patterns and *evolves the swarm itself*—adjusting Scout's heuristics, Verifier's prompts, and priority weights based on what actually causes problems.
+
+---
+
+## 10. The Economic Moat
 
 Why does this beat GPT-6?
 
