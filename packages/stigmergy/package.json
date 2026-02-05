@@ -1,0 +1,34 @@
+{
+  "name": "@hierophage/stigmergy",
+  "version": "0.1.0",
+  "description": "Filesystem-backed stigmergic tree engine",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "bin": {
+    "stig": "dist/src/cli/cli.js"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build_package.js",
+    "test": "vitest run",
+    "test:ci": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@google/genai": "1.30.0",
+    "chalk": "^5.4.1",
+    "yaml": "^2.7.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.33",
+    "typescript": "^5.3.3",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

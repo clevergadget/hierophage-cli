@@ -125,7 +125,27 @@ The software exists in a quantum superposition of multiple working implementatio
 
 ---
 
-## 8. The Economic Moat
+## 8. Atomic Implementation (The Short-Circuit)
+
+**The Concept:**
+When a goal is simple enough that it reaches stability without decomposition, why stop at specification?
+
+**The Mechanic:**
+When a node reaches stability (confidence >= 8, need <= 3) while remaining a leaf (no children), we know something special: this is atomic. It doesn't need further decomposition—it's ready to implement.
+
+*   *Trigger:* A leaf node reaches stable status.
+*   *Action:* The system asks: "This is simple enough to implement directly. Generate the code?"
+*   *Output:* Working implementation attached to the node, validated against the spec.
+
+**The Magic:**
+The boundary between specification and implementation dissolves. For trivial functions ("add two numbers"), the spec *is* the implementation. The system recognizes when it's "already there" and delivers code instead of more planning.
+
+**Why This Matters:**
+Most productivity tools force you through the same process regardless of complexity. A one-line function gets the same ceremony as a distributed system. The Cytoplasm adapts—simple things stay simple.
+
+---
+
+## 9. The Economic Moat
 
 Why does this beat GPT-6?
 
