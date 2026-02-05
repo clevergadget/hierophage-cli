@@ -468,8 +468,8 @@ export async function run(
         lastPhase = currentPhase;
       }
 
-      // 6. Weaver: detect cross-branch semantic overlaps (every 30 pulses)
-      const crossedWeaverInterval = Math.floor(pulses.length / 30) > Math.floor(prevTotal / 30);
+      // 6. Weaver: detect cross-branch semantic overlaps (every 10 pulses)
+      const crossedWeaverInterval = Math.floor(pulses.length / 10) > Math.floor(prevTotal / 10);
       if (weaver && crossedWeaverInterval) {
         const weaveResult = await weaver.weave(nodes);
         for (const mutation of weaveResult.mutations) {
@@ -478,12 +478,12 @@ export async function run(
         weaverOverlaps += weaveResult.overlaps.filter(o => o.recommendation !== 'keep_separate').length;
       }
 
-      // 7. Synthesizer: merge stable semantic duplicates (every 30 pulses)
-      const crossedSynthInterval = Math.floor(pulses.length / 30) > Math.floor(prevTotal / 30);
+      // 7. Synthesizer: merge stable semantic duplicates (every 10 pulses)
+      const crossedSynthInterval = Math.floor(pulses.length / 10) > Math.floor(prevTotal / 10);
       if (synthesizer && crossedSynthInterval) {
         // Re-scan tree after weaver may have flagged nodes
         const freshNodes = scanTree(workspacePath);
-        const synthResult = await synthesizer.synthesize(freshNodes, { maxGroups: 5 });
+        const synthResult = await synthesizer.synthesize(freshNodes, { maxGroups: 10 });
         for (const mutation of synthResult.mutations) {
           dispatcher.dispatch(mutation);
         }

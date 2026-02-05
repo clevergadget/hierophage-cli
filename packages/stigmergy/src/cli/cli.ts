@@ -72,20 +72,30 @@ yargs(hideBin(process.argv))
         })
         .option('analyze', {
           type: 'boolean',
-          describe: 'Use LLM to identify goal-specific concerns (instead of static scaffolds)',
+          describe: 'Use LLM to identify goal-specific concerns (default: true)',
+          default: true,
+        })
+        .option('static-scaffolds', {
+          type: 'boolean',
+          describe: 'Use static scaffolds instead of LLM analysis',
           default: false,
         })
         .option('context', {
           type: 'array',
           alias: 'c',
-          describe: 'Implementation constraints (e.g., -c "TypeScript" -c "Node.js")',
-          default: [],
+          describe: 'Implementation constraints (defaults: TypeScript, React, Node.js)',
+          default: ['TypeScript', 'React', 'Node.js'],
+        })
+        .option('no-context', {
+          type: 'boolean',
+          describe: 'Clear default constraints (explore all tech stacks)',
+          default: false,
         }),
     async (argv) => {
       await initCommand(argv.goal as string, getStigRoot(argv), {
         scaffold: !argv['skip-scaffolds'],
-        analyze: argv.analyze as boolean,
-        context: argv.context as string[],
+        analyze: argv['static-scaffolds'] ? false : (argv.analyze as boolean),
+        context: argv['no-context'] ? [] : (argv.context as string[]),
       });
     },
   )

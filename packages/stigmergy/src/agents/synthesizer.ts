@@ -419,10 +419,12 @@ function buildSynthesisPrompt(canonical: StigNode, others: StigNode[], reason: s
 }
 
 /**
- * Check if a node is stable (safe to merge).
+ * Check if a node is stable enough to merge.
+ * Aggressively loosened - merge early to prevent sprawl.
+ * Only skip if node has very high conflict (active dispute).
  */
 function isStable(node: StigNode): boolean {
-  return node.signals.need <= 2 && node.signals.confidence >= 8 && node.signals.conflict <= 1;
+  return node.signals.conflict <= 5; // Merge anything that isn't heavily conflicted
 }
 
 /**
