@@ -2,8 +2,10 @@
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { initCommand } from './init.js';
 import { statusCommand } from './status.js';
 import { showCommand } from './show.js';
@@ -18,11 +20,38 @@ import { grazerCommand } from './grazer-cmd.js';
 import { resolverCommand } from './resolver-cmd.js';
 import { verifyCommand } from './verify-cmd.js';
 
-const STIG_ROOT = join(homedir(), '.hierophage', 'stig');
+// Load .env.local from package root if it exists (overrides shell env)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envPath = join(__dirname, '..', '..', '.env.local');
+if (existsSync(envPath)) {
+  const envContent = readFileSync(envPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) continue;
+    const key = trimmed.slice(0, eqIndex).trim();
+    const value = trimmed.slice(eqIndex + 1).trim().replace(/^["']|["']$/g, '');
+    // Always use .env.local values - they take precedence over shell env
+    process.env[key] = value;
+  }
+}
+
+const DEFAULT_STIG_ROOT = join(homedir(), '.hierophage', 'stig');
+
+// Resolve workspace path from --workspace flag or default
+function getStigRoot(argv: { workspace?: string }): string {
+  return argv.workspace ?? DEFAULT_STIG_ROOT;
+}
 
 yargs(hideBin(process.argv))
   .scriptName('stig')
   .usage('$0 <command> [options]')
+  .option('workspace', {
+    type: 'string',
+    describe: 'Workspace directory (default: ~/.hierophage/stig)',
+    global: true,
+  })
   .command(
     'init <goal>',
     'Initialize a new stigmergy workspace',
@@ -50,7 +79,7 @@ yargs(hideBin(process.argv))
           default: [],
         }),
     async (argv) => {
-      await initCommand(argv.goal as string, STIG_ROOT, {
+      await initCommand(argv.goal as string, getStigRoot(argv), {
         scaffold: !argv['skip-scaffolds'],
         analyze: argv.analyze as boolean,
         context: argv.context as string[],
@@ -61,8 +90,8 @@ yargs(hideBin(process.argv))
     'status',
     'Show tree status with signal indicators',
     () => {},
-    () => {
-      statusCommand(STIG_ROOT);
+    (argv) => {
+      statusCommand(getStigRoot(argv));
     },
   )
   .command(
@@ -75,7 +104,7 @@ yargs(hideBin(process.argv))
         demandOption: true,
       }),
     (argv) => {
-      showCommand(STIG_ROOT, argv.path as string);
+      showCommand(getStigRoot(argv), argv.path as string);
     },
   )
   .command(
@@ -99,7 +128,7 @@ yargs(hideBin(process.argv))
           default: false,
         }),
     (argv) => {
-      addCommand(STIG_ROOT, argv.parent as string, argv.name as string, {
+      addCommand(getStigRoot(argv), argv.parent as string, argv.name as string, {
         scaffold: argv.scaffold,
       });
     },
@@ -125,15 +154,15 @@ yargs(hideBin(process.argv))
           demandOption: true,
         }),
     (argv) => {
-      setCommand(STIG_ROOT, argv.path as string, argv.signal as string, argv.value as string);
+      setCommand(getStigRoot(argv), argv.path as string, argv.signal as string, argv.value as string);
     },
   )
   .command(
     'pulse',
     'Run one simulation pulse (scan → select → act)',
     () => {},
-    async () => {
-      await pulseCommand(STIG_ROOT);
+    async (argv) => {
+      await pulseCommand(getStigRoot(argv));
     },
   )
   .command(
@@ -160,7 +189,7 @@ yargs(hideBin(process.argv))
           describe: 'Number of parallel agents (default: 4)',
         }),
     async (argv) => {
-      await runCommand(STIG_ROOT, {
+      await runCommand(getStigRoot(argv), {
         maxPulses: argv['max-pulses'] as number | undefined,
         dryRun: argv['dry-run'] as boolean,
         confirm: argv.confirm as boolean,
@@ -172,8 +201,8 @@ yargs(hideBin(process.argv))
     'viz',
     'Open tree visualization in browser',
     () => {},
-    () => {
-      vizCommand(STIG_ROOT);
+    (argv) => {
+      vizCommand(getStigRoot(argv));
     },
   )
   .command(
@@ -205,7 +234,7 @@ yargs(hideBin(process.argv))
           default: false,
         }),
     async (argv) => {
-      await crystallizeCommand(STIG_ROOT, {
+      await crystallizeCommand(getStigRoot(argv), {
         branch: argv.branch as string | undefined,
         output: argv.output as string | undefined,
         dryRun: argv['dry-run'] as boolean,
@@ -224,7 +253,7 @@ yargs(hideBin(process.argv))
         default: false,
       }),
     async (argv) => {
-      await scoutCommand(STIG_ROOT, {
+      await scoutCommand(getStigRoot(argv), {
         fix: argv.fix as boolean,
       });
     },
@@ -239,7 +268,7 @@ yargs(hideBin(process.argv))
         default: false,
       }),
     async (argv) => {
-      await grazerCommand(STIG_ROOT, {
+      await grazerCommand(getStigRoot(argv), {
         prune: argv.prune as boolean,
       });
     },
@@ -260,7 +289,7 @@ yargs(hideBin(process.argv))
           default: false,
         }),
     async (argv) => {
-      await resolverCommand(STIG_ROOT, {
+      await resolverCommand(getStigRoot(argv), {
         max: argv.max as number,
         apply: argv.apply as boolean,
       });
@@ -286,7 +315,7 @@ yargs(hideBin(process.argv))
           default: 10,
         }),
     async (argv) => {
-      await verifyCommand(STIG_ROOT, {
+      await verifyCommand(getStigRoot(argv), {
         path: argv.path as string | undefined,
         coverage: argv.coverage as boolean,
         max: argv.max as number,

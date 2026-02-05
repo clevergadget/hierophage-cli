@@ -1,0 +1,7 @@
+# Environment (contains API keys)
+.env.local
+
+# Temp workspaces from manual testing
+.temp/
+
+# Build output is committed (dist/)
