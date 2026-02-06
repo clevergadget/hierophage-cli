@@ -26,6 +26,11 @@ function buildHierarchy(workspacePath: string, nodes: StigNode[]): VizNode {
   const nodeMap = new Map<string, StigNode>();
   for (const n of nodes) nodeMap.set(n.path, n);
 
+  function extractGoal(content: string): string | undefined {
+    const match = content.match(/^#\s*Goal\s*\n+(.+)/m);
+    return match?.[1]?.trim();
+  }
+
   function buildNode(node: StigNode): VizNode {
     const childPaths = listChildren(workspacePath, node.path);
     const children = childPaths
@@ -34,7 +39,7 @@ function buildHierarchy(workspacePath: string, nodes: StigNode[]): VizNode {
       .map(buildNode);
 
     return {
-      name: node.name,
+      name: node.path === '.' ? (extractGoal(node.content) ?? node.name) : node.name,
       path: node.path,
       need: node.signals.need,
       confidence: node.signals.confidence,

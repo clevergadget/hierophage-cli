@@ -33,9 +33,19 @@ function isDead(d: D3Node): boolean {
   return d.data.isPlaceholder && !d.data.isScaffold;
 }
 
+// Persistent D3 state stored in a ref to avoid rebuilding on selection change
+interface D3State {
+  typedRoot: D3Node;
+  allLinks: d3.Selection<SVGPathElement, d3.HierarchyPointLink<VizNode>, SVGGElement, unknown>;
+  nodeSelection: d3.Selection<SVGGElement, D3Node, SVGGElement, unknown>;
+  selectionRing: d3.Selection<SVGCircleElement, unknown, null, undefined>;
+  selectionAnimFrame: number;
+}
+
 export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: TreeVizProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const d3StateRef = useRef<D3State | null>(null);
 
   const handleNodeClick = useCallback(
     (_event: MouseEvent, d: D3Node) => {
@@ -52,6 +62,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
     [onSelectNode],
   );
 
+  // Build the tree — only when data changes
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -106,7 +117,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       );
 
     // Nodes
-    const node = g
+    const nodeSelection = g
       .selectAll<SVGGElement, D3Node>('.node')
       .data(typedRoot.descendants())
       .join('g')
@@ -116,14 +127,13 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       .on('click', (event, d) => {
         event.stopPropagation();
         handleNodeClick(event, d);
-        highlightPath(d);
       });
 
     // Staggered entrance
-    node.style('opacity', 0).transition().delay((_d, i) => i * 15).duration(400).style('opacity', 1);
+    nodeSelection.style('opacity', 0).transition().delay((_d, i) => i * 15).duration(400).style('opacity', 1);
 
     // Node shapes
-    node.each(function (d) {
+    nodeSelection.each(function (d) {
       const el = d3.select(this);
       const r = nodeRadius(d);
       const color = nodeColor(d);
@@ -201,7 +211,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
     });
 
     // Labels
-    node
+    nodeSelection
       .append('text')
       .attr('x', (d) => nodeRadius(d) + 8)
       .attr('dy', '0.35em')
@@ -217,7 +227,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       .attr('font-family', "'SF Mono','Fira Code','JetBrains Mono',monospace");
 
     // Conflict badge
-    node
+    nodeSelection
       .append('text')
       .attr('x', function (d) {
         const prev = this.previousSibling as SVGTextElement | null;
@@ -241,65 +251,87 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       .attr('opacity', 0)
       .attr('pointer-events', 'none');
 
-    let selectionAnimFrame: number;
-
-    function highlightPath(d: D3Node) {
-      const ancestorSet = new Set<D3Node>();
-      const ancestorLinks = new Set<string>();
-      const chain = d.ancestors();
-      chain.forEach((a) => ancestorSet.add(a));
-      for (let i = 0; i < chain.length - 1; i++) {
-        ancestorLinks.add(chain[i + 1].data.path + '→' + chain[i].data.path);
-      }
-
-      allLinks
-        .attr('stroke', (l) =>
-          ancestorLinks.has(l.source.data.path + '→' + l.target.data.path) ? '#60a5fa' : '#3a3a55',
-        )
-        .attr('stroke-width', (l) =>
-          ancestorLinks.has(l.source.data.path + '→' + l.target.data.path) ? 2.5 : 1.5,
-        );
-
-      node.attr('opacity', (n) => (ancestorSet.has(n) ? 1 : 0.25));
-
-      // Selection ring
-      const r = nodeRadius(d) + 8;
-      selectionRing.attr('cx', d.y).attr('cy', d.x).attr('r', r).attr('opacity', 0.7);
-
-      if (selectionAnimFrame) cancelAnimationFrame(selectionAnimFrame);
-      let offset = 0;
-      (function spin() {
-        offset = (offset + 0.3) % 100;
-        selectionRing.attr('stroke-dashoffset', offset);
-        selectionAnimFrame = requestAnimationFrame(spin);
-      })();
-    }
-
-    function clearHighlight() {
-      allLinks.attr('stroke', '#3a3a55').attr('stroke-width', 1.5);
-      node.attr('opacity', 1);
-      selectionRing.attr('opacity', 0);
-      if (selectionAnimFrame) cancelAnimationFrame(selectionAnimFrame);
-    }
+    // Store D3 state for the selection effect
+    d3StateRef.current = {
+      typedRoot,
+      allLinks,
+      nodeSelection,
+      selectionRing,
+      selectionAnimFrame: 0,
+    };
 
     // Click background to deselect
     svg.on('click', () => {
-      clearHighlight();
+      const state = d3StateRef.current;
+      if (state) {
+        state.allLinks.attr('stroke', '#3a3a55').attr('stroke-width', 1.5);
+        state.nodeSelection.attr('opacity', 1);
+        state.selectionRing.attr('opacity', 0);
+        if (state.selectionAnimFrame) cancelAnimationFrame(state.selectionAnimFrame);
+      }
       onClearSelection();
     });
 
-    // If there's already a selected path, highlight it
-    if (selectedPath) {
-      const target = typedRoot.descendants().find((d) => d.data.path === selectedPath);
-      if (target) {
-        highlightPath(target);
-      }
+    return () => {
+      const state = d3StateRef.current;
+      if (state?.selectionAnimFrame) cancelAnimationFrame(state.selectionAnimFrame);
+    };
+  }, [data, handleNodeClick, onClearSelection]);
+
+  // Highlight selected node — runs without rebuilding the tree
+  useEffect(() => {
+    const state = d3StateRef.current;
+    if (!state) return;
+
+    const { typedRoot, allLinks, nodeSelection, selectionRing } = state;
+
+    if (!selectedPath) {
+      // Clear highlight
+      allLinks.attr('stroke', '#3a3a55').attr('stroke-width', 1.5);
+      nodeSelection.attr('opacity', 1);
+      selectionRing.attr('opacity', 0);
+      if (state.selectionAnimFrame) cancelAnimationFrame(state.selectionAnimFrame);
+      return;
     }
 
+    const target = typedRoot.descendants().find((d) => d.data.path === selectedPath);
+    if (!target) return;
+
+    // Highlight ancestor path
+    const ancestorSet = new Set<D3Node>();
+    const ancestorLinks = new Set<string>();
+    const chain = target.ancestors();
+    chain.forEach((a) => ancestorSet.add(a));
+    for (let i = 0; i < chain.length - 1; i++) {
+      ancestorLinks.add(chain[i + 1].data.path + '→' + chain[i].data.path);
+    }
+
+    allLinks
+      .attr('stroke', (l) =>
+        ancestorLinks.has(l.source.data.path + '→' + l.target.data.path) ? '#60a5fa' : '#3a3a55',
+      )
+      .attr('stroke-width', (l) =>
+        ancestorLinks.has(l.source.data.path + '→' + l.target.data.path) ? 2.5 : 1.5,
+      );
+
+    nodeSelection.attr('opacity', (n) => (ancestorSet.has(n) ? 1 : 0.25));
+
+    // Selection ring
+    const r = nodeRadius(target) + 8;
+    selectionRing.attr('cx', target.y).attr('cy', target.x).attr('r', r).attr('opacity', 0.7);
+
+    if (state.selectionAnimFrame) cancelAnimationFrame(state.selectionAnimFrame);
+    let offset = 0;
+    (function spin() {
+      offset = (offset + 0.3) % 100;
+      selectionRing.attr('stroke-dashoffset', offset);
+      state.selectionAnimFrame = requestAnimationFrame(spin);
+    })();
+
     return () => {
-      if (selectionAnimFrame) cancelAnimationFrame(selectionAnimFrame);
+      if (state.selectionAnimFrame) cancelAnimationFrame(state.selectionAnimFrame);
     };
-  }, [data, handleNodeClick, onClearSelection, selectedPath]);
+  }, [selectedPath]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 }
