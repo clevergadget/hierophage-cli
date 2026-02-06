@@ -39,7 +39,7 @@ export { BudgetTracker } from './budget/tracker.js';
 export type { BudgetEntry, BudgetSnapshot } from './budget/tracker.js';
 
 // Agents
-export type { Agent, AgentCost, AgentResult, ColonyContext } from './agents/agent.js';
+export type { Agent, AgentCost, AgentResult, ColonyContext, OverlapReport } from './agents/agent.js';
 export { MockSpore } from './agents/mock-spore.js';
 export { FlashSpore } from './agents/flash-spore.js';
 export { Scout } from './agents/scout.js';

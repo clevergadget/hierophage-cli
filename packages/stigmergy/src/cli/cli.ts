@@ -20,7 +20,6 @@ import { grazerCommand } from './grazer-cmd.js';
 import { resolverCommand } from './resolver-cmd.js';
 import { verifyCommand } from './verify-cmd.js';
 import { synthesizeCommand } from './synthesize-cmd.js';
-import { weaveCommand } from './weave-cmd.js';
 import { replayCommand } from './replay-cmd.js';
 
 // Load .env.local from package root if it exists (overrides shell env)
@@ -361,21 +360,6 @@ yargs(hideBin(process.argv))
         dryRun: argv['dry-run'] as boolean,
         confirm: argv.confirm as boolean,
         maxGroups: argv['max-groups'] as number,
-      });
-    },
-  )
-  .command(
-    'weave',
-    'Find cross-branch semantic overlaps',
-    (y) =>
-      y.option('apply', {
-        type: 'boolean',
-        describe: 'Apply conflict signals to overlapping nodes',
-        default: false,
-      }),
-    async (argv) => {
-      await weaveCommand(getStigRoot(argv), {
-        apply: argv.apply as boolean,
       });
     },
   )

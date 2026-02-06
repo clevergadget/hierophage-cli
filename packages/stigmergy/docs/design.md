@@ -84,7 +84,7 @@ FlashSpore returns structured JSON via `responseMimeType: 'application/json'` wi
 
 Scout and Grazer use zero LLM calls. Pure pattern matching and threshold checks.
 
-**Why:** They run every 10 pulses. If they used LLM calls, maintenance would cost more than growth. Heuristics are fast, deterministic, and free. Reserve LLM budget for tasks that require judgment (FlashSpore, Resolver, Verifier, Synthesizer, Weaver).
+**Why:** They run every 10 pulses. If they used LLM calls, maintenance would cost more than growth. Heuristics are fast, deterministic, and free. Reserve LLM budget for tasks that require judgment (FlashSpore, Resolver, Verifier, Synthesizer).
 
 ### Depth Penalty Over Depth Limit
 
@@ -98,7 +98,7 @@ The priority formula includes `- depth * 0.5` rather than a hard depth cap.
 
 ## 4. The Agent Ecology
 
-Seven agents form the current ecology. Each occupies a distinct niche. The metaphor matters — these are species, not microservices.
+Six agents form the current ecology. Each occupies a distinct niche. The metaphor matters — these are species, not microservices.
 
 ### Growth Species
 
@@ -120,7 +120,7 @@ Seven agents form the current ecology. Each occupies a distinct niche. The metap
 
 **Synthesizer** — Sibling duplicate fusion. Detects semantic duplicates among siblings ("Create Task" vs "Task Creation"), generates synthesized content, applies atomic MERGE_NODES mutation. Key lesson encoded in prompt: Create/Delete/Update are DIFFERENT operations — the LLM will over-merge without explicit prohibitions.
 
-**Weaver** — Cross-branch overlap detector. Scans the full tree for the same concept appearing in different branches. Recommends merge (true duplicates), link (related but distinct), or keep separate. Raises conflict on merge candidates for the Resolver to address.
+**Cross-Branch Scent Trails** (built into FlashSpore) — Rather than a centralized Weaver agent that scans the full tree in one LLM call, overlap detection is distributed across FlashSpore's normal per-pulse operations. Every FlashSpore call receives a lightweight `branchMap` — node names and paths organized by branch, no content. While working on its target node, FlashSpore can observe overlaps with other branches and report them as a side-channel. Detected overlaps raise conflict (+2) on both nodes for the Resolver to address. This replaced the original Weaver agent which violated the Local Context Only primitive by ingesting the entire tree.
 
 ### The Missing Species: The Skeptic
 
@@ -177,11 +177,21 @@ Key mechanisms added:
 
 Key mechanisms added:
 - **Synthesizer** — LLM sibling duplicate detection + atomic merge
-- **Weaver** — LLM cross-branch overlap detection
+- **Cross-Branch Scent Trails** — Distributed overlap detection via FlashSpore's branchMap (replaced centralized Weaver)
 - **MERGE_NODES mutation** — Atomic update-target + delete-sources
-- **FlashSpore awareness** — Top-level concepts passed in ColonyContext to prevent duplicates at creation time
+- **FlashSpore awareness** — Top-level concepts + branch map passed in ColonyContext for cross-tree awareness
 
 **Key lesson:** Must explicitly tell the LLM what NOT to merge. Without prohibitions, it merges Create/Delete/Update into one node because they're "all CRUD operations." The LLM's instinct is to compress. Stigmergy requires granularity.
+
+**Architectural lesson:** The original Weaver agent violated the Local Context Only primitive (§2, #5) by ingesting the entire tree in one LLM call. It was the only agent that broke this rule, and it struggled with large trees (context window overflow, JSON parse errors). Replacing it with distributed overlap detection — FlashSpore observing branch names as a side effect of normal work — is more stigmergic and scales better.
+
+### Phase 6: Telemetry & Observability
+
+Key mechanisms added:
+- **TelemetryEmitter** — JSONL writer recording 12 event types during runs
+- **`stig replay`** — 4-view replay command: timeline, node history, maintenance, pulse detail
+- **Agent filtering** — `--agent` flag to isolate events by agent type
+- **Extended AgentResult** — `action`, `reasoning`, and `overlaps` fields for full observability
 
 ---
 
@@ -221,11 +231,11 @@ An architectural review of the system as of Phase 5 completion. This section sho
 
 **Signal-based coordination actually works.** Agents don't know each other exist. They respond to pheromones. And yet: FlashSpore avoids high-conflict nodes, Resolver is attracted to them, Scout raises conflict that Resolver resolves, Grazer cleans what nobody else touches. This is real stigmergy, not orchestration pretending to be emergent.
 
-**The test suite proves structural integrity.** 148 tests including 64-agent parallel stress tests. The tree maintains integrity under concurrent mutation. This was not guaranteed and required careful engineering to achieve.
+**The test suite proves structural integrity.** 173 tests including 64-agent parallel stress tests. The tree maintains integrity under concurrent mutation. This was not guaranteed and required careful engineering to achieve.
 
 ### What Needs Attention
 
-**The maintenance cycle is becoming a kitchen sink.** Every 10 pulses: Verifier (stability), parent propagation, Verifier (coverage), Scout, Grazer, Resolver (conditional), Weaver, and Synthesizer. That's 8 operations, several with LLM calls, all on one timer. The original design had Weaver/Synthesizer at 30-pulse intervals. They're now at 10. The aggregate maintenance cost may exceed growth cost in late-phase runs. This needs condition-triggered scheduling rather than fixed intervals.
+**The maintenance cycle is substantial.** Every 10 pulses: Verifier (stability), parent propagation, Verifier (coverage), Scout, Grazer, Resolver (conditional), and Synthesizer. That's 7 operations, several with LLM calls, all on one timer. The aggregate maintenance cost may exceed growth cost in late-phase runs. This needs condition-triggered scheduling rather than fixed intervals. (Previously included the Weaver — now removed, its function distributed into FlashSpore.)
 
 **The Verifier's dual role creates fragility.** Stability checks ("is this implementable?") and coverage checks ("do children cover parent?") are different questions at different lifecycle points. A single LLM hallucination on a coverage check ("no, children don't cover this") can stall convergence for an entire branch by blocking parent propagation.
 
@@ -233,7 +243,7 @@ An architectural review of the system as of Phase 5 completion. This section sho
 
 **The adversarial function is incomplete.** FlashSpore grows. Scout checks syntax. Verifier checks implementability. But nobody challenges the *ideas themselves*. Nobody says "you specified real-time sync under a batch processing parent — that's a contradiction." The Skeptic design (§4) addresses this. Without it, the system can converge on well-written nonsense.
 
-**Filesystem scanning doesn't scale.** `scanTree()` walks the entire directory tree every pulse. No caching. Fine up to ~500 nodes. A 588-node run already showed Weaver struggling with context size. This will become the bottleneck for larger trees.
+**Filesystem scanning doesn't scale.** `scanTree()` walks the entire directory tree every pulse. No caching. Fine up to ~500 nodes. Beyond that, incremental scanning or an in-memory cache with filesystem sync will be needed.
 
 **The Crystallizer is disconnected from the ecology.** It runs as a separate command after everything else, not as part of the feedback loop. It's a report generator, not an agent. Incremental crystallization (generating specs for stable branches while others evolve) would make it a living part of the system.
 
@@ -257,7 +267,7 @@ A JSONL format capturing per-pulse telemetry: target, agent, mutations attempted
 ### Tier 2: Valuable, Requires Design Work
 
 **Subtree Relocation**
-When the Weaver detects a node that semantically belongs in a different branch, a Relocator agent moves it (preserving children) and lets the ecology repair inconsistencies. The tree self-organizes beyond just merging duplicates — it restructures.
+When overlap detection identifies a node that semantically belongs in a different branch, a Relocator agent moves it (preserving children) and lets the ecology repair inconsistencies. The tree self-organizes beyond just merging duplicates — it restructures.
 
 **Adaptive Maintenance Scheduling**
 Currently maintenance runs on fixed intervals (every 10 pulses). The system should adapt: run Scout more when conflict density is rising, run Synthesizer more when duplicate rate is high, skip Weaver when the tree is small. Condition-triggered beats clock-triggered.
@@ -284,9 +294,7 @@ Persona agents ("Angry Admin", "Confused Newbie", "Hacker") that read the interf
 
 ### Scaling Concerns
 
-**Large Tree Optimization** — At 500+ nodes, `scanTree` filesystem walk becomes expensive. Options: incremental scanning (track which nodes changed), in-memory cache with filesystem sync, or chunk-based Weaver calls for very large trees.
-
-**Context Window Management** — Weaver struggles with very large trees because it needs to see all nodes. Options: hierarchical summarization, branch-chunked comparison, confidence-gated comparison (only compare settled nodes).
+**Large Tree Optimization** — At 500+ nodes, `scanTree` filesystem walk becomes expensive. Options: incremental scanning (track which nodes changed), in-memory cache with filesystem sync. The branchMap (used for cross-branch overlap detection) caps at 200 lines, so FlashSpore's context stays bounded regardless of tree size.
 
 ---
 

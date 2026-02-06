@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import type { Agent, AgentCost, AgentResult, ColonyContext } from './agent.js';
+import type { Agent, AgentCost, AgentResult, ColonyContext, OverlapReport } from './agent.js';
 import type { Mutation, StigNode } from '../types.js';
 import { createMutation } from '../dispatch/mutations.js';
 
@@ -40,6 +40,19 @@ const RESPONSE_SCHEMA = {
           },
         },
         required: ['type', 'path'],
+      },
+    },
+    overlaps: {
+      type: 'array',
+      description: 'Cross-branch overlaps detected while working on this node. Only report when confident two nodes in different branches represent the same concept.',
+      items: {
+        type: 'object',
+        properties: {
+          target_path: { type: 'string', description: 'Node in the current context or branch that overlaps' },
+          overlap_path: { type: 'string', description: 'Node in another branch (from the branch map)' },
+          reason: { type: 'string', description: 'Why these represent the same concept' },
+        },
+        required: ['target_path', 'overlap_path', 'reason'],
       },
     },
   },
@@ -120,6 +133,23 @@ When you see a technically valid but practically rare concern:
 
 The goal is a spec that helps build the **80% case well**, not a spec that handles every edge case poorly.
 Real developers ship the common case first. So should you.
+
+## Cross-Branch Overlap Detection (Side Channel)
+
+You may receive a "Branch Map" showing the tree's structure organized by branch (names and paths only, no content). This is like pheromone scent trails — brief markers of what territory exists elsewhere in the tree.
+
+**Your primary task is always the target node.** But while working, if you notice that a node in the current context clearly represents the SAME concept as something in another branch, report it in the \`overlaps\` array.
+
+**What counts as an overlap:**
+- "local-storage" under state-management AND "local-storage" under persistence → same concept, different branches
+- "authentication" under user-management AND "auth-middleware" under api-layer → same concern split across branches
+
+**What does NOT count:**
+- Two nodes with similar names but clearly different scope (e.g., "validation" under forms vs "validation" under api)
+- Nodes in the same branch (that's the Synthesizer's job)
+- Vague similarities based only on naming convention
+
+**Most pulses should have zero overlaps.** An empty overlaps array is normal and expected. Only report when you're confident.
 
 ## Decision-Making Rules (CRITICAL)
 
@@ -267,6 +297,11 @@ interface FlashResponse {
     content?: string;
     signals?: { need?: number; confidence?: number; conflict?: number };
   }>;
+  overlaps?: Array<{
+    target_path: string;
+    overlap_path: string;
+    reason: string;
+  }>;
 }
 
 /**
@@ -297,7 +332,7 @@ export class FlashSpore implements Agent {
     const zeroCost: AgentCost = { api_calls: 1, input_tokens: 0, output_tokens: 0 };
 
     try {
-      const userPrompt = buildPrompt(target, context, children, colony?.topLevelConcepts);
+      const userPrompt = buildPrompt(target, context, children, colony?.topLevelConcepts, colony?.branchMap);
       const systemPrompt = buildSystemPrompt(colony);
 
       const response = await this.ai.models.generateContent({
@@ -325,7 +360,12 @@ export class FlashSpore implements Agent {
       const parsed: FlashResponse = JSON.parse(text);
       const mutations = responseToMutations(parsed, target);
 
-      return { mutations, cost, action: parsed.action, reasoning: parsed.reasoning };
+      // Pass through overlap observations as side-channel data
+      const overlaps: OverlapReport[] | undefined = parsed.overlaps?.length
+        ? parsed.overlaps.map(o => ({ target_path: o.target_path, overlap_path: o.overlap_path, reason: o.reason }))
+        : undefined;
+
+      return { mutations, cost, action: parsed.action, reasoning: parsed.reasoning, overlaps };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { mutations: [], cost: zeroCost, error: msg };
@@ -334,13 +374,14 @@ export class FlashSpore implements Agent {
 }
 
 /**
- * Build the user prompt from the target node, context chain, children, and top-level concepts.
+ * Build the user prompt from the target node, context chain, children, and colony context.
  */
 export function buildPrompt(
   target: StigNode,
   context: string,
   children: StigNode[],
   topLevelConcepts?: string[],
+  branchMap?: string,
 ): string {
   const parts: string[] = [];
 
@@ -353,6 +394,15 @@ export function buildPrompt(
     parts.push('These concepts already exist at the top level of the tree:');
     parts.push(topLevelConcepts.map(c => `- ${c}`).join('\n'));
     parts.push('\n**Important:** If your decomposition would create something that overlaps with these, integrate with the existing concept instead of creating a duplicate.');
+  }
+
+  // Show branch map for cross-branch overlap detection
+  if (branchMap) {
+    parts.push('\n## Branch Map (Scent Trails)\n');
+    parts.push('Tree structure organized by branch. Use this to detect cross-branch overlaps:');
+    parts.push('```');
+    parts.push(branchMap);
+    parts.push('```');
   }
 
   parts.push('\n## Target Node\n');

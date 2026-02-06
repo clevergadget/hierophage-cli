@@ -157,19 +157,17 @@ The tree transitions through phases based on aggregate confidence:
 
 **Important:** Explicitly told what NOT to merge (Create/Delete/Update are different operations)
 
-### Weaver
+### Cross-Branch Scent Trails (built into FlashSpore)
 
-**Role:** Cross-branch semantic overlap detection.
+**Role:** Distributed cross-branch overlap detection.
 
-**Behavior:**
-- Scans entire tree for concepts that appear in multiple branches
-- Recommends: MERGE (true duplicates), LINK (related but distinct), or KEEP_SEPARATE
-- MERGE raises conflict on both nodes for resolution
-- LINK is informational only (no mutations)
+**How it works:**
+- FlashSpore receives a lightweight `branchMap` on every pulse — node names and paths organized by branch (no content)
+- While working on its target node, FlashSpore can observe overlaps with other branches as a side-channel
+- Detected overlaps raise conflict (+2) on both nodes for the Resolver to address
+- Most pulses report zero overlaps — this is normal
 
-**When it runs:** Every 10 pulses (maintenance cycle)
-
-**What it sees:** Full node content for accurate semantic comparison
+**Why this replaces the Weaver:** The original Weaver agent violated the Local Context Only principle by ingesting the entire tree in one LLM call. Distributing overlap detection into FlashSpore's per-pulse work is more stigmergic — each agent sees only its local context plus brief environmental markers
 
 ---
 
@@ -297,7 +295,7 @@ What `stig run` reports:
 | `coverage_checks` / `coverage_failures` | Verifier coverage results |
 | `resolver_attempts` / `resolver_resolutions` | Conflict resolution results |
 | `synthesis_merges` | Sibling duplicates merged |
-| `weaver_overlaps` | Cross-branch overlaps detected (MERGE only) |
+| `flash_overlaps` | Cross-branch overlaps detected by FlashSpore |
 
 ---
 
@@ -329,8 +327,9 @@ Sequential steps:
 3. **Scout patrol** — Detect and flag hollow nodes, tautologies
 4. **Grazer patrol** — Prune dead nodes (untouched 10+ pulses)
 5. **Resolver** — Resolve conflicts if triggered (see triggers below)
-6. **Weaver** — Detect cross-branch semantic overlaps
-7. **Synthesizer** — Merge stable sibling duplicates
+6. **Synthesizer** — Merge stable sibling duplicates
+
+**Note:** Cross-branch overlap detection now happens during normal FlashSpore pulses (not in maintenance). See "Cross-Branch Scent Trails" in Entities.
 
 ### Resolver Triggers
 
@@ -354,6 +353,55 @@ Individual nodes have a "temperature" based on recent mutation activity:
 When a node is overheated and no mutations succeed:
 - Confidence nudged up, need nudged down
 - Priority rotates to other nodes
+
+---
+
+## Telemetry & Replay
+
+### How It Works
+
+Every `stig run` writes a `telemetry.jsonl` file in the workspace root. Each line is a JSON object representing one event. The file is cleared at the start of each run.
+
+### Event Types
+
+| Event | When | Key Fields |
+|-------|------|------------|
+| `run_start` | Start of run | goal, model, max_pulses, parallel count |
+| `run_end` | End of run | termination reason, final stats, total cost |
+| `pulse` | Each pulse | target, agent, action, reasoning, mutations, cost, phase, stats |
+| `phase_change` | Phase transition | from, to, stats |
+| `scout` | Maintenance | hollow nodes, tautologies, similar siblings, fixes |
+| `grazer` | Maintenance | pruned node paths |
+| `verifier_stability` | Maintenance | node, passed, reason |
+| `verifier_coverage` | Maintenance | node, passed, gaps |
+| `propagation` | Maintenance | node, need/confidence deltas |
+| `resolver` | Maintenance | node, resolved, conflict before/after |
+| `synthesizer` | Maintenance | target, sources, merged |
+| `flash_overlap` | During pulse | target_path, overlap_path, reason |
+
+### Replay Command
+
+```bash
+# Timeline view (default) — pulses grouped by phase
+stig replay
+
+# Node history — all events touching a specific node
+stig replay --node auth/login
+
+# Pulse detail — full info for one pulse
+stig replay --pulse 42
+
+# Maintenance view — only ecology events (scout, grazer, verifier, etc.)
+stig replay --maintenance
+
+# Agent filter — events by agent type
+stig replay --agent verifier
+stig replay --agent overlap
+```
+
+### Data Location
+
+Telemetry data is stored at `{stigRoot}/telemetry.jsonl`. It's human-readable (one JSON object per line) and can be processed with standard tools like `jq`.
 
 ---
 
@@ -422,8 +470,8 @@ stig init "Build a todo app" \
 
 **"Too many duplicates"**
 - Run Synthesizer more frequently
-- Ensure FlashSpore sees `topLevelConcepts`
-- Review Weaver output for cross-branch fragmentation
+- Ensure FlashSpore sees `topLevelConcepts` and `branchMap`
+- Check `stig replay --maintenance` for flash_overlap events showing cross-branch overlaps
 
 **"Conflicts not resolving"**
 - Lower the conflict density trigger (currently 5%)
@@ -454,16 +502,19 @@ stig init "Build a todo app" \
 | `stig verify --path <path>` | Verify specific node stability |
 | `stig verify --coverage` | Check coverage across tree |
 | `stig synthesize --confirm` | Merge sibling duplicates |
-| `stig weave --apply` | Flag cross-branch overlaps |
 | `stig viz` | Open D3 visualization in browser |
 | `stig crystallize --confirm` | Generate specification documents |
+| `stig replay` | Timeline view of last run |
+| `stig replay --node <path>` | History of events for a specific node |
+| `stig replay --pulse <N>` | Detailed view of a specific pulse |
+| `stig replay --maintenance` | Only maintenance/ecology events |
+| `stig replay --agent <name>` | Filter events by agent name |
 
 ### Future Possibilities
 
 **Not implemented, but architecturally possible:**
 
 - **Evaporation** — Signals decay over time if nodes aren't touched, forcing re-evaluation
-- **Cross-branch synthesis** — Synthesizer handling MERGE recommendations from Weaver
 - **Adaptive maintenance** — Frequency based on tree state, not fixed intervals
 - **Human-in-the-loop gates** — Pause at phase transitions for review
 - **Multi-goal trees** — Multiple root nodes with shared subtrees
@@ -511,5 +562,5 @@ stig crystallize --confirm
 | Same node targeted repeatedly | Gravity well | Check depth, nudge signals |
 | No mutations succeeding | All overheated | Wait, or reset signals |
 | Tree won't stabilize | Conflict loop | Run `stig resolve --apply` |
-| Duplicates appearing | Semantic overlap | Run `stig synthesize --confirm` |
+| Duplicates appearing | Semantic overlap | Run `stig synthesize --confirm` (same-parent siblings) or check `stig replay --maintenance` for flash_overlap events (cross-branch) |
 | Empty nodes with high confidence | Scout missed it | `stig scout --fix` |

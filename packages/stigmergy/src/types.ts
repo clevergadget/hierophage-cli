@@ -137,7 +137,7 @@ export type TelemetryEvent =
   | { type: 'propagation'; timestamp: string; pulse: number; node: string; need_delta: number; confidence_delta: number }
   | { type: 'resolver'; timestamp: string; pulse: number; node: string; resolved: boolean; conflict_before: number; conflict_after: number }
   | { type: 'synthesizer'; timestamp: string; pulse: number; target: string; sources: string[]; merged: boolean }
-  | { type: 'weaver'; timestamp: string; pulse: number; nodes: string[]; recommendation: string; reason: string };
+  | { type: 'flash_overlap'; timestamp: string; pulse: number; target_path: string; overlap_path: string; reason: string };
 
 export type TerminationReason = 'stable' | 'max_pulses' | 'no_target' | 'budget_exceeded';
 
