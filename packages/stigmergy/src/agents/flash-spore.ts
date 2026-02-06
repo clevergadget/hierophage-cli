@@ -254,13 +254,17 @@ function buildPhaseGuidance(colony: ColonyContext): string {
       parts.push('- A developer reading this spec would know *what* to build but not *how*.');
       parts.push('- The gap between specification and implementation remains too wide.');
       parts.push('');
-      parts.push('The most valuable action now is **UPDATE_CONTENT**:');
+      parts.push('The most valuable actions are **UPDATE_CONTENT** and **SETTLE**:');
       parts.push('- Add concrete details: data formats, API shapes, validation rules.');
       parts.push('- Include edge cases and error conditions.');
       parts.push('- Write acceptance criteria a developer could verify.');
+      parts.push('- If a node has confidence >= 6 and its content is specific enough to implement, **SETTLE it**.');
+      parts.push('- The tree needs convergence, not infinite refinement. Deepening past the implementable threshold is waste.');
       parts.push('');
-      parts.push('Decomposition at this phase is rarely the answer. If you find yourself wanting to decompose,');
-      parts.push('ask: "Could I instead add this detail as content to the current node?"');
+      parts.push('**DECOMPOSE is strongly discouraged in brood-care.** The tree already has its shape.');
+      parts.push('Only decompose if you find a genuine, critical gap — not because a node could theoretically be more detailed.');
+      parts.push('Ask: "Could I add this as content to the existing node instead of creating a child?"');
+      parts.push('If yes, do that. New children at this phase fragment the specification and delay convergence.');
       break;
 
     case 'crystallization':
@@ -430,6 +434,12 @@ export function buildPrompt(
         const firstLine = child.content.split('\n')[0];
         parts.push(`  ${firstLine}`);
       }
+    }
+    if (children.length > 5) {
+      parts.push('');
+      parts.push(`**WARNING: This node already has ${children.length} children.** Do NOT add more.`);
+      parts.push('With this many children, further decomposition fragments the specification.');
+      parts.push('Instead: REVIEW existing children, UPDATE_CONTENT to deepen them, or SETTLE if they are complete.');
     }
   } else {
     parts.push('\nThis node has no children (leaf node).');

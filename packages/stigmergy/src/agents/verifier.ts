@@ -94,11 +94,18 @@ Full coverage means:
 - The children together address the parent's complete scope
 
 NOT full coverage if:
-- The parent mentions something no child addresses
-- There are obvious gaps (e.g., parent says "input and output" but only input has a child)
-- Children overlap heavily but miss aspects of the parent
+- The parent mentions something no child addresses AND it's part of the common case
+- There are obvious gaps in core functionality (e.g., parent says "input and output" but only input has a child)
+- Children overlap heavily but miss core aspects of the parent
 
-Be thorough. Look for gaps.`;
+IMPORTANT — The "most likely app" principle:
+- Coverage means the 80% common case is addressed, not every theoretical concern.
+- If the parent mentions edge cases as notes (e.g., "handle X if requirements demand it"), that does NOT require a child node.
+- Do not flag gaps for rare scenarios, advanced features, or concerns that 95% of implementations wouldn't need.
+- Ask: "Would a developer building the straightforward version of this need a dedicated child for this gap?"
+- If the answer is "only in an enterprise/advanced scenario," it's NOT a gap.
+
+Be thorough about core functionality. Be lenient about edge cases and advanced concerns.`;
 
 /**
  * Verifier: LLM-powered quality gates for the specification tree.
