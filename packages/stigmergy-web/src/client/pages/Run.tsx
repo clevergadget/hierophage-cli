@@ -5,10 +5,10 @@ import { useRunStream } from '../hooks/useRunStream';
 import { PulseEventCard } from '../components/PulseEvent';
 
 const phaseColors: Record<string, string> = {
-  germination: '#a78bfa',
-  foraging: '#60a5fa',
-  'brood-care': '#fbbf24',
-  crystallization: '#4ade80',
+  germination: '#8b5cf6', // violet-500
+  foraging: '#3b82f6',    // blue-500
+  'brood-care': '#f59e0b', // amber-500
+  crystallization: '#22c55e', // green-500
 };
 
 export function Run() {
@@ -79,29 +79,29 @@ export function Run() {
   );
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-slate-50">
       {/* Main area */}
       <div className="flex-1 flex flex-col">
         {/* Controls */}
-        <div className="p-6 border-b border-[#3a3a55] shrink-0">
-          <h2 className="text-lg font-bold text-[#f0f0f8] mb-2">Run Control</h2>
-          <p className="text-xs text-[#707088] mb-4 leading-relaxed max-w-xl">
+        <div className="p-6 border-b border-slate-200 shrink-0 bg-white shadow-sm z-10">
+          <h2 className="text-xl font-serif font-bold text-slate-900 mb-2">Run Control</h2>
+          <p className="text-xs text-slate-500 mb-6 leading-relaxed max-w-xl">
             Each pulse, the{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300">FlashSpore agent</Link>{' '}
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">FlashSpore agent</Link>{' '}
             picks the highest-priority{' '}
-            <Link to="/tree-guide" className="text-blue-400 hover:text-blue-300">node</Link>{' '}
+            <Link to="/tree-guide" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">node</Link>{' '}
             and decides to decompose, review, update, or settle it.
             Every 10 pulses,{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300">maintenance agents</Link>{' '}
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">maintenance agents</Link>{' '}
             run: Scout, Grazer, Verifier, Resolver, Synthesizer.
             The run ends when the tree is{' '}
-            <Link to="/tree-guide" className="text-blue-400 hover:text-blue-300">stable</Link>{' '}
+            <Link to="/tree-guide" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">stable</Link>{' '}
             or the budget is exhausted.
           </p>
 
           <div className="flex items-end gap-6 mb-4">
             <div>
-              <label className="block text-[10px] text-[#a0a0b8] uppercase tracking-wider mb-1">
+              <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">
                 Max Pulses
               </label>
               <input
@@ -109,11 +109,11 @@ export function Run() {
                 value={maxPulses}
                 onChange={(e) => setMaxPulses(Number(e.target.value))}
                 disabled={runActive}
-                className="w-24 bg-[#1e1e32] border border-[#3a3a55] rounded px-2 py-1.5 text-sm text-[#e0e0ec] focus:outline-none focus:border-[#60a5fa] disabled:opacity-40"
+                className="w-24 bg-white border border-slate-300 rounded px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
               />
             </div>
             <div>
-              <label className="block text-[10px] text-[#a0a0b8] uppercase tracking-wider mb-1">
+              <label className="block text-[10px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">
                 Parallel
               </label>
               <input
@@ -123,16 +123,16 @@ export function Run() {
                 disabled={runActive}
                 min={1}
                 max={32}
-                className="w-20 bg-[#1e1e32] border border-[#3a3a55] rounded px-2 py-1.5 text-sm text-[#e0e0ec] focus:outline-none focus:border-[#60a5fa] disabled:opacity-40"
+                className="w-20 bg-white border border-slate-300 rounded px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:bg-slate-50"
               />
             </div>
-            <label className="flex items-center gap-2 text-sm text-[#a0a0b8] cursor-pointer pb-1">
+            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer pb-1 select-none">
               <input
                 type="checkbox"
                 checked={dryRun}
                 onChange={(e) => setDryRun(e.target.checked)}
                 disabled={runActive}
-                className="accent-blue-500"
+                className="accent-blue-600 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
               />
               Dry run
             </label>
@@ -141,67 +141,67 @@ export function Run() {
               <button
                 onClick={handleStart}
                 disabled={starting}
-                className="px-6 py-2 bg-green-600/20 text-green-400 border border-green-600/30 rounded text-sm font-semibold hover:bg-green-600/30 transition-colors disabled:opacity-40"
+                className="px-6 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-semibold hover:bg-emerald-100 transition-all disabled:opacity-50 shadow-sm"
               >
                 {starting ? 'Starting...' : 'Start Run'}
               </button>
             ) : (
               <button
                 onClick={handleStop}
-                className="px-6 py-2 bg-red-600/20 text-red-400 border border-red-600/30 rounded text-sm font-semibold hover:bg-red-600/30 transition-colors"
+                className="px-6 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-100 transition-all shadow-sm"
               >
                 Stop
               </button>
             )}
           </div>
 
-          {error && <div className="text-red-400 text-sm">{error}</div>}
+          {error && <div className="text-red-600 text-sm mt-2 bg-red-50 p-2 rounded border border-red-100">{error}</div>}
         </div>
 
         {/* Pulse stream */}
-        <div ref={streamRef} className="flex-1 overflow-y-auto">
+        <div ref={streamRef} className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-4">
           {stream.pulses.length === 0 && !runActive && (
-            <div className="px-8 py-12 max-w-lg mx-auto">
-              <div className="text-sm font-semibold text-[#f0f0f8] mb-4 text-center">
+            <div className="px-8 py-12 max-w-lg mx-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="text-base font-serif font-bold text-slate-900 mb-6 text-center">
                 What happens during a run
               </div>
 
               {/* Pulse lifecycle visual */}
-              <div className="space-y-3 mb-6">
-                <LifecycleStep number={1} color="#60a5fa" label="Scan">
+              <div className="space-y-4 mb-8">
+                <LifecycleStep number={1} color="#3b82f6" label="Scan">
                   Read every node's signals. Calculate priority for each.
                 </LifecycleStep>
-                <div className="flex justify-center">
-                  <div className="w-px h-3 bg-[#3a3a55]" />
+                <div className="flex justify-center -my-2 relative z-0">
+                  <div className="w-px h-6 bg-slate-200" />
                 </div>
-                <LifecycleStep number={2} color="#a78bfa" label="Select">
+                <LifecycleStep number={2} color="#8b5cf6" label="Select">
                   Pick the N highest-priority nodes (avoiding siblings for parallel safety).
                 </LifecycleStep>
-                <div className="flex justify-center">
-                  <div className="w-px h-3 bg-[#3a3a55]" />
+                <div className="flex justify-center -my-2 relative z-0">
+                  <div className="w-px h-6 bg-slate-200" />
                 </div>
-                <LifecycleStep number={3} color="#fbbf24" label="Pulse">
+                <LifecycleStep number={3} color="#f59e0b" label="Pulse">
                   FlashSpore reads each target's context and decides: decompose, review, update, or settle.
                 </LifecycleStep>
-                <div className="flex justify-center">
-                  <div className="w-px h-3 bg-[#3a3a55]" />
+                <div className="flex justify-center -my-2 relative z-0">
+                  <div className="w-px h-6 bg-slate-200" />
                 </div>
-                <LifecycleStep number={4} color="#4ade80" label="Apply">
+                <LifecycleStep number={4} color="#22c55e" label="Apply">
                   Mutations go through the dispatcher. Signals update. The tree changes.
                 </LifecycleStep>
-                <div className="flex justify-center">
-                  <div className="w-px h-3 bg-[#3a3a55]" />
+                <div className="flex justify-center -my-2 relative z-0">
+                  <div className="w-px h-6 bg-slate-200" />
                 </div>
-                <LifecycleStep number={5} color="#f87171" label="Maintain" subtitle="every 10 pulses">
+                <LifecycleStep number={5} color="#ef4444" label="Maintain" subtitle="every 10 pulses">
                   Verifier, Scout, Grazer, Resolver, Synthesizer run in sequence.
                 </LifecycleStep>
               </div>
 
-              <div className="text-center">
-                <div className="text-[11px] text-[#707088] mb-1">
+              <div className="text-center pt-6 border-t border-slate-100">
+                <div className="text-xs text-slate-500 mb-1">
                   Repeats until the tree is stable or budget is exhausted.
                 </div>
-                <div className="text-[10px] text-[#606078]">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
                   A typical 200-pulse run takes ~3 minutes and costs ~$0.06.
                 </div>
               </div>
@@ -209,7 +209,7 @@ export function Run() {
           )}
 
           {stream.pulses.length === 0 && runActive && (
-            <div className="text-[#707088] text-sm text-center mt-16 animate-pulse">
+            <div className="text-slate-400 text-sm text-center mt-16 animate-pulse font-medium">
               Waiting for first pulse...
             </div>
           )}
@@ -224,17 +224,20 @@ export function Run() {
             );
 
             return (
-              <div key={i}>
+              <div key={i} className="mb-4">
                 {phaseChange && (
-                  <div className="flex items-center gap-3 px-6 py-2 bg-[#1e1e32]">
-                    <div className="h-px flex-1 bg-[#3a3a55]" />
+                  <div className="flex items-center gap-3 py-4 mb-4">
+                    <div className="h-px flex-1 bg-slate-200" />
                     <span
-                      className="text-[10px] font-semibold uppercase tracking-wider px-2"
-                      style={{ color: phaseColors[phaseChange.to] || '#a0a0b8' }}
+                      className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-white border rounded-full shadow-sm"
+                      style={{ 
+                        color: phaseColors[phaseChange.to] || '#64748b',
+                        borderColor: `${phaseColors[phaseChange.to]}40`
+                      }}
                     >
                       {phaseChange.from} → {phaseChange.to}
                     </span>
-                    <div className="h-px flex-1 bg-[#3a3a55]" />
+                    <div className="h-px flex-1 bg-slate-200" />
                   </div>
                 )}
                 <PulseEventCard event={pulse} />
@@ -244,21 +247,22 @@ export function Run() {
 
           {/* Maintenance events inline */}
           {stream.maintenanceEvents.length > 0 && (
-            <div className="border-t border-[#3a3a55] mt-2">
+            <div className="border-t border-slate-200 mt-6 pt-4 bg-white rounded-lg p-4 shadow-sm">
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-3 px-2">Maintenance Log</div>
               {stream.maintenanceEvents.map((evt, i) => (
-                <div key={i} className="px-6 py-1.5 text-[11px] text-[#8888a0] flex gap-2">
-                  <span className="text-amber-400/60 uppercase w-20 shrink-0">{evt.agent}</span>
-                  <span className="truncate">{JSON.stringify(evt.details)}</span>
+                <div key={i} className="px-2 py-1.5 text-[11px] text-slate-600 flex gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 rounded transition-colors">
+                  <span className="text-amber-600 font-bold uppercase w-24 shrink-0 tracking-wide text-[10px] pt-0.5">{evt.agent}</span>
+                  <span className="font-mono text-slate-500 truncate">{JSON.stringify(evt.details)}</span>
                 </div>
               ))}
             </div>
           )}
 
           {stream.runEnded && (
-            <div className="mx-6 my-4 p-4 bg-[#1e1e32] border border-[#3a3a55] rounded">
-              <div className="text-sm font-semibold text-[#f0f0f8] mb-1">Run Complete</div>
-              <div className="text-xs text-[#a0a0b8]">
-                Reason: {stream.endReason}
+            <div className="mx-auto max-w-lg my-8 p-6 bg-slate-100 border border-slate-200 rounded-lg text-center shadow-inner">
+              <div className="text-lg font-serif font-bold text-slate-900 mb-2">Run Complete</div>
+              <div className="text-sm text-slate-600 max-w-prose mx-auto">
+                {stream.endReason}
               </div>
             </div>
           )}
@@ -266,47 +270,41 @@ export function Run() {
       </div>
 
       {/* Stats sidebar */}
-      <div className="w-64 bg-[#1e1e32] border-l border-[#3a3a55] p-5 shrink-0">
-        <h3 className="text-sm font-semibold text-[#f0f0f8] mb-4">Live Stats</h3>
+      <div className="w-72 bg-white border-l border-slate-200 p-6 shrink-0 h-full overflow-y-auto shadow-sm z-20">
+        <h3 className="text-sm font-bold text-slate-900 mb-6 uppercase tracking-wider border-b border-slate-100 pb-2">Live Stats</h3>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <StatItem label="Pulses" value={stream.pulses.length} />
           <StatItem
             label="Phase"
             value={lastPulse?.phase || '—'}
-            color={phaseColors[lastPulse?.phase || ''] || '#a0a0b8'}
+            color={phaseColors[lastPulse?.phase || ''] || '#94a3b8'}
           />
           <StatItem label="Nodes" value={lastPulse?.stats?.total_nodes ?? '—'} />
           <StatItem
             label="Avg Confidence"
             value={lastPulse?.stats?.avg_confidence ?? '—'}
-            color="#4ade80"
+            color="#22c55e"
           />
           <StatItem
             label="Stable"
             value={lastPulse?.stats?.stable_count ?? '—'}
-            color="#4ade80"
+            color="#22c55e"
           />
           <StatItem
             label="Conflict"
             value={lastPulse?.stats?.nodes_in_conflict ?? '—'}
             color={
-              (lastPulse?.stats?.nodes_in_conflict ?? 0) > 0 ? '#f87171' : undefined
+              (lastPulse?.stats?.nodes_in_conflict ?? 0) > 0 ? '#ef4444' : undefined
             }
           />
 
-          <div className="pt-4 border-t border-[#3a3a55]">
-            <div className="text-[10px] text-[#707088] uppercase tracking-wider mb-2">Cost</div>
-            <div className="text-xs text-[#a0a0b8] space-y-1">
-              <div>
-                API calls: <span className="text-[#e0e0ec]">{totalCost.api_calls}</span>
-              </div>
-              <div>
-                Input tokens: <span className="text-[#e0e0ec]">{totalCost.input_tokens.toLocaleString()}</span>
-              </div>
-              <div>
-                Output tokens: <span className="text-[#e0e0ec]">{totalCost.output_tokens.toLocaleString()}</span>
-              </div>
+          <div className="pt-6 border-t border-slate-200">
+            <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-3 font-bold">Cost</div>
+            <div className="space-y-3">
+              <StatItem label="API Calls" value={totalCost.api_calls} compact />
+              <StatItem label="Input Tokens" value={totalCost.input_tokens.toLocaleString()} compact />
+              <StatItem label="Output Tokens" value={totalCost.output_tokens.toLocaleString()} compact />
             </div>
           </div>
         </div>
@@ -319,15 +317,22 @@ function StatItem({
   label,
   value,
   color,
+  compact,
 }: {
   label: string;
   value: string | number;
   color?: string;
+  compact?: boolean;
 }) {
   return (
-    <div>
-      <div className="text-[10px] text-[#707088] uppercase tracking-wider mb-0.5">{label}</div>
-      <div className="text-lg font-bold" style={{ color: color || '#e0e0ec' }}>
+    <div className={compact ? "flex justify-between items-center" : ""}>
+      <div className={`text-[10px] text-slate-500 uppercase tracking-wider font-semibold ${compact ? "" : "mb-1"}`}>
+        {label}
+      </div>
+      <div
+        className={`${compact ? "text-xs" : "text-xl"} font-mono font-medium truncate`}
+        style={{ color: color || '#0f172a' }}
+      >
         {value}
       </div>
     </div>
@@ -348,19 +353,21 @@ function LifecycleStep({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 bg-[#1e1e32] border border-[#3a3a55] rounded p-3">
-      <span
-        className="text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-        style={{ background: `${color}20`, color, border: `1px solid ${color}40` }}
+    <div className="flex gap-4 relative z-10 bg-white p-2 rounded-lg border border-transparent hover:border-slate-100 transition-colors">
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0 mt-0.5"
+        style={{ background: color }}
       >
         {number}
-      </span>
+      </div>
       <div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-[#f0f0f8]">{label}</span>
-          {subtitle && <span className="text-[10px] text-[#707088]">{subtitle}</span>}
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className="font-bold text-slate-900 text-sm" style={{ color }}>{label}</span>
+          {subtitle && <span className="text-[10px] text-slate-400 uppercase tracking-wide">{subtitle}</span>}
         </div>
-        <div className="text-[11px] text-[#a0a0b8] leading-relaxed mt-0.5">{children}</div>
+        <div className="text-xs text-slate-600 leading-relaxed max-w-xs">
+          {children}
+        </div>
       </div>
     </div>
   );

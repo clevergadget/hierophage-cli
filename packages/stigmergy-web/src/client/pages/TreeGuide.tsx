@@ -3,27 +3,27 @@ import { Link } from 'react-router-dom';
 export function TreeGuide() {
   return (
     <div className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-bold text-[#f0f0f8] mb-2">The Tree</h1>
-      <p className="text-sm text-[#8888a0] mb-8">
+      <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">The Tree</h1>
+      <p className="text-sm text-slate-600 mb-8">
         How the specification tree works — nodes, signals, mutations, and convergence.
       </p>
 
       <Section title="Filesystem-Backed">
         <p>
           The tree is not a database. It's a directory structure on disk. Each node is a
-          directory containing a <code className="text-[#e0e0ec] bg-[#282845] px-1 rounded text-xs">_node.md</code> file
+          directory containing a <code className="text-slate-800 bg-slate-100 px-1 py-0.5 rounded text-xs border border-slate-200">_node.md</code> file
           with YAML frontmatter (signals) and a markdown body (content). The root is{' '}
-          <code className="text-[#e0e0ec] bg-[#282845] px-1 rounded text-xs">workspace/root.md</code>.
+          <code className="text-slate-800 bg-slate-100 px-1 py-0.5 rounded text-xs border border-slate-200">workspace/root.md</code>.
         </p>
         <p className="mt-3">
           This means the tree is human-readable, git-trackable, and tool-agnostic. You can
           open any node in a text editor, modify signals by hand, or diff two runs.
           The engine reads the filesystem on every operation — there's no cache to invalidate,
           no opaque data store to query. Debugging means{' '}
-          <code className="text-[#e0e0ec] bg-[#282845] px-1 rounded text-xs">cat workspace/auth/_node.md</code>,
+          <code className="text-slate-800 bg-slate-100 px-1 py-0.5 rounded text-xs border border-slate-200">cat workspace/auth/_node.md</code>,
           not a database query.
         </p>
-        <div className="mt-3 bg-[#1e1e32] border border-[#3a3a55] rounded p-3 text-xs font-mono text-[#a0a0b8]">
+        <div className="mt-3 bg-white border border-slate-200 rounded p-4 text-xs font-mono text-slate-500 shadow-sm">
           <div>workspace/</div>
           <div className="ml-4">root.md</div>
           <div className="ml-4">user-flows/</div>
@@ -50,7 +50,7 @@ export function TreeGuide() {
         <p>
           Every node carries the same structure — like cells in an organism, each one contains
           the same basic machinery. Click any node in the{' '}
-          <Link to="/viz" className="text-blue-400 hover:text-blue-300 underline">
+          <Link to="/viz" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
             Tree Visualization
           </Link>{' '}
           to inspect it.
@@ -64,19 +64,19 @@ export function TreeGuide() {
             desc="The three values that guide all agent behavior — named after the chemical signals that ants, slime molds, and termites use to coordinate."
           >
             <div className="mt-2 grid grid-cols-3 gap-2">
-              <SignalCard name="Need" color="#f87171" emoji="0-10">
+              <SignalCard name="Need" color="#ef4444" emoji="0-10">
                 How urgently this node needs work. Like a strong pheromone trail —
                 high need attracts agents here.
               </SignalCard>
-              <SignalCard name="Confidence" color="#4ade80" emoji="0-10">
+              <SignalCard name="Confidence" color="#16a34a" emoji="0-10">
                 How implementable this node is. High confidence means an engineer
                 could build from this spec.
               </SignalCard>
-              <SignalCard name="Conflict" color="#fbbf24" emoji="0-10">
+              <SignalCard name="Conflict" color="#d97706" emoji="0-10">
                 Problems detected by{' '}
-                <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">Scouts</Link>,
+                <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Scouts</Link>,
                 overlap detection, or coverage failures. Cleared by the{' '}
-                <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">Resolver</Link>.
+                <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Resolver</Link>.
               </SignalCard>
             </div>
           </Field>
@@ -95,17 +95,17 @@ export function TreeGuide() {
           Each pulse, the engine selects the highest-priority node — just like ants
           following the strongest pheromone trail. Priority is calculated as:
         </p>
-        <div className="mt-3 bg-[#1e1e32] border border-[#3a3a55] rounded p-4 text-center">
-          <code className="text-sm text-[#e0e0ec]">
+        <div className="mt-3 bg-slate-50 border border-slate-200 rounded p-4 text-center">
+          <code className="text-sm text-slate-700 font-mono">
             need × 2 − confidence + conflict × 0.5 + scaffold_boost − depth × 0.5
           </code>
         </div>
-        <div className="mt-3 space-y-2 text-xs text-[#a0a0b8]">
-          <p><strong className="text-[#e0e0ec]">need × 2</strong> — Need is the strongest attractor. High-need nodes get attention first.</p>
-          <p><strong className="text-[#e0e0ec]">− confidence</strong> — Already-confident nodes are deprioritized. Don't fix what isn't broken.</p>
-          <p><strong className="text-[#e0e0ec]">+ conflict × 0.5</strong> — Conflict nodes attract attention, but less than raw need.</p>
-          <p><strong className="text-[#e0e0ec]">+ scaffold_boost</strong> — Scaffold nodes get a small boost to ensure structural coverage early on.</p>
-          <p><strong className="text-[#e0e0ec]">− depth × 0.5</strong> — Deeper nodes are slightly deprioritized. This prevents "gravity wells" where one deep branch monopolizes the queue forever. It's a gradient, not a hard limit — a deep node with need:10 can still beat a shallow node with need:3.</p>
+        <div className="mt-3 space-y-2 text-xs text-slate-500">
+          <p><strong className="text-slate-700">need × 2</strong> — Need is the strongest attractor. High-need nodes get attention first.</p>
+          <p><strong className="text-slate-700">− confidence</strong> — Already-confident nodes are deprioritized. Don't fix what isn't broken.</p>
+          <p><strong className="text-slate-700">+ conflict × 0.5</strong> — Conflict nodes attract attention, but less than raw need.</p>
+          <p><strong className="text-slate-700">+ scaffold_boost</strong> — Scaffold nodes get a small boost to ensure structural coverage early on.</p>
+          <p><strong className="text-slate-700">− depth × 0.5</strong> — Deeper nodes are slightly deprioritized. This prevents "gravity wells" where one deep branch monopolizes the queue forever. It's a gradient, not a hard limit — a deep node with need:10 can still beat a shallow node with need:3.</p>
         </div>
         <p className="mt-3">
           In parallel mode, the engine selects N highest-priority nodes that are <em>not siblings</em>,
@@ -116,9 +116,9 @@ export function TreeGuide() {
           <strong>Incremental Scanning for Large Trees</strong> — Currently, priority
           calculation requires scanning every node in the tree on every pulse. At 500+ nodes,
           this becomes expensive. Incremental scanning would track which nodes changed since
-          the last scan and only recalculate priority for affected subtrees. The branchMap
-          (used for overlap detection) already caps at 200 lines, so FlashSpore's context
-          stays bounded regardless of tree size — it's the scanner that needs optimization.
+          the last scan and only recalculate priority for affected subtrees. FlashSpore's context
+          is already local (target + ancestors + siblings + top-level concepts), so it stays
+          bounded regardless of tree size — it's the scanner that needs optimization.
         </Future>
       </Section>
 
@@ -126,36 +126,36 @@ export function TreeGuide() {
         <p>
           All changes to the tree go through a single <strong>MutationDispatcher</strong> — a
           Redux-style state machine that validates, applies, and logs every change. Every mutation
-          is appended to <code className="text-[#e0e0ec] bg-[#282845] px-1 rounded text-xs">mutations.log</code>,
+          is appended to <code className="text-slate-800 bg-slate-100 px-1 py-0.5 rounded text-xs border border-slate-200">mutations.log</code>,
           creating an immutable audit trail. This is the{' '}
-          <Link to="/concepts" className="text-blue-400 hover:text-blue-300 underline">
+          <Link to="/concepts" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
             persistent trace
           </Link>{' '}
           — like pheromone deposits that never fully evaporate.
         </p>
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <MutationCard type="CREATE_NODE" color="#60a5fa">
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <MutationCard type="CREATE_NODE" color="#3b82f6">
             Agent decomposes a concept into sub-nodes. Creates a new directory with initial
             signals and content. This is how the colony grows — like spores colonizing
             new substrate.
           </MutationCard>
-          <MutationCard type="UPDATE_CONTENT" color="#fbbf24">
+          <MutationCard type="UPDATE_CONTENT" color="#eab308">
             Agent rewrites or deepens a node's specification text. The core mechanism
             for improving quality — like ants reinforcing a trail.
           </MutationCard>
-          <MutationCard type="UPDATE_SIGNALS" color="#a78bfa">
+          <MutationCard type="UPDATE_SIGNALS" color="#a855f7">
             Adjusts pheromone values. Used by maintenance agents, propagation, and the
             nudge system. Changes what attracts future agents.
           </MutationCard>
-          <MutationCard type="DELETE_NODE" color="#f87171">
+          <MutationCard type="DELETE_NODE" color="#ef4444">
             Removes a dead or redundant node. Used by the{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">Grazer</Link>{' '}
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Grazer</Link>{' '}
             during necrophoresis — like ants carrying dead colony members out of the nest.
           </MutationCard>
-          <MutationCard type="MERGE_NODES" color="#c084fc">
+          <MutationCard type="MERGE_NODES" color="#8b5cf6">
             Atomic operation: update a target node with synthesized content, then delete
             the source nodes. Used by the{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">Synthesizer</Link>{' '}
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Synthesizer</Link>{' '}
             to merge semantic duplicates — like slime mold tendrils fusing when they meet.
           </MutationCard>
         </div>
@@ -173,25 +173,25 @@ export function TreeGuide() {
         <p>
           A node is <strong>stable</strong> when:
         </p>
-        <div className="mt-2 bg-[#1e1e32] border border-green-500/20 rounded p-3 text-sm space-y-1">
+        <div className="mt-3 bg-green-50/50 border border-green-200 rounded p-3 text-sm space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-green-400">need ≤ 2</span>
-            <span className="text-[#707088]">— not urgently needed</span>
+            <span className="text-green-700 font-medium">need ≤ 2</span>
+            <span className="text-green-700/70">— not urgently needed</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-400">confidence ≥ 8</span>
-            <span className="text-[#707088]">— implementable content</span>
+            <span className="text-green-700 font-medium">confidence ≥ 8</span>
+            <span className="text-green-700/70">— implementable content</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-400">conflict ≤ 1</span>
-            <span className="text-[#707088]">— no unresolved problems</span>
+            <span className="text-green-700 font-medium">conflict ≤ 1</span>
+            <span className="text-green-700/70">— no unresolved problems</span>
           </div>
         </div>
         <p className="mt-3">
           The run terminates when <em>every node's highest priority</em> falls below
           the stability threshold. But stability is verified by an LLM —
           the{' '}
-          <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">
+          <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
             Verifier
           </Link>{' '}
           checks whether "stable-looking" nodes are truly implementable,
@@ -228,7 +228,7 @@ export function TreeGuide() {
           would receive every pulse. With it, the colony naturally spreads its attention across
           the tree.
         </p>
-        <p className="mt-2 text-[#a0a0b8]">
+        <p className="mt-2 text-slate-500 text-sm">
           When a node is overheated and no mutations succeed, both signals get nudged:
           confidence goes up, need goes down. This was a hard-won bug fix — nudging only
           confidence created stuck states where nodes had need:9 and confidence:10 simultaneously.
@@ -238,20 +238,21 @@ export function TreeGuide() {
       <Section title="Visual Guide">
         <p>
           In the{' '}
-          <Link to="/viz" className="text-blue-400 hover:text-blue-300 underline">
+          <Link to="/viz" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
             Tree Visualization
           </Link>
           , each node's appearance tells you its state at a glance:
         </p>
-        <ul className="mt-2 space-y-1.5 text-xs text-[#a0a0b8]">
-          <li><span className="inline-block w-3 h-3 rounded-full bg-red-400 align-middle mr-2" />Red nodes have low confidence — they need work</li>
-          <li><span className="inline-block w-3 h-3 rounded-full bg-green-400 align-middle mr-2" style={{ boxShadow: '0 0 6px #4ade8066' }} />Green glowing nodes are stable — they're done</li>
-          <li><span className="inline-block w-3 h-3 rounded-full bg-amber-400 align-middle mr-2" />Yellow nodes have conflict — something needs resolving</li>
-          <li><span className="inline-block w-3 h-3 rounded-full bg-[#c17a6a] align-middle mr-2" style={{ borderRadius: '2px', transform: 'rotate(45deg)' }} />Diamond shapes are scaffolds — structural nodes seeded at init</li>
-          <li><span className="inline-block w-3 h-3 rounded-full border border-dashed border-red-400 opacity-60 align-middle mr-2" />Dashed outlines are dead/placeholder nodes — candidates for the Grazer</li>
-          <li>Node <em>size</em> reflects need — urgent nodes are bigger, attracting your eye just like they attract agents</li>
-          <li>Clicking a node highlights its ancestor chain in blue — showing the path from root to leaf</li>
+        <ul className="mt-3 space-y-2 text-xs text-slate-500">
+          <li className="flex items-center"><span className="inline-block w-3 h-3 rounded-full bg-red-400 mr-2 shadow-sm" />Red nodes have low confidence — they need work</li>
+          <li className="flex items-center"><span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2 shadow-sm ring-2 ring-green-100" />Green glowing nodes are stable — they're done</li>
+          <li className="flex items-center"><span className="inline-block w-3 h-3 rounded-full bg-amber-400 mr-2 shadow-sm" />Yellow nodes have conflict — something needs resolving</li>
+          <li className="flex items-center"><span className="inline-block w-3 h-3 rounded bg-indigo-400 mr-2 rotate-45 scale-75 shadow-sm" />Diamond shapes are scaffolds — structural nodes seeded at init</li>
+          <li className="flex items-center"><span className="inline-block w-3 h-3 rounded-full border border-dashed border-slate-400 opacity-60 mr-2" />Dashed outlines are dead/placeholder nodes — candidates for the Grazer</li>
         </ul>
+        <p className="mt-2 text-xs text-slate-500">
+          Node <em>size</em> reflects need — urgent nodes are bigger, attracting your eye just like they attract agents. Clicking a node highlights its ancestor chain in blue.
+        </p>
       </Section>
     </div>
   );
@@ -259,30 +260,30 @@ export function TreeGuide() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-8">
-      <h2 className="text-base font-semibold text-[#f0f0f8] mb-3 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+    <section className="mb-10">
+      <h2 className="text-lg font-serif font-semibold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
         {title}
       </h2>
-      <div className="text-sm text-[#c0c0d4] leading-relaxed">{children}</div>
+      <div className="text-sm text-slate-600 leading-relaxed max-w-2xl">{children}</div>
     </section>
   );
 }
 
 function Future({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-4 bg-[#1a1a30] border border-dashed border-[#3a3a60] rounded p-3">
-      <div className="text-[10px] text-[#7070a0] uppercase tracking-widest mb-2">Future Direction</div>
-      <div className="text-xs text-[#9090aa] leading-relaxed">{children}</div>
+    <div className="mt-5 bg-slate-50 border border-dashed border-slate-300 rounded p-4">
+      <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-semibold">Future Direction</div>
+      <div className="text-xs text-slate-600 leading-relaxed">{children}</div>
     </div>
   );
 }
 
 function Field({ name, desc, children }: { name: string; desc: string; children?: React.ReactNode }) {
   return (
-    <div className="bg-[#1e1e32] border border-[#3a3a55] rounded p-3">
-      <div className="text-sm font-semibold text-[#f0f0f8] mb-1">{name}</div>
-      <div className="text-xs text-[#a0a0b8] leading-relaxed">{desc}</div>
+    <div className="bg-white border border-slate-200 rounded p-4 shadow-sm">
+      <div className="text-sm font-semibold text-slate-900 mb-1">{name}</div>
+      <div className="text-xs text-slate-500 leading-relaxed mb-1">{desc}</div>
       {children}
     </div>
   );
@@ -290,22 +291,22 @@ function Field({ name, desc, children }: { name: string; desc: string; children?
 
 function SignalCard({ name, color, emoji, children }: { name: string; color: string; emoji: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#161625] border border-[#3a3a55] rounded p-2.5">
-      <div className="flex items-center gap-1.5 mb-1">
-        <span className="w-2 h-2 rounded-full" style={{ background: color }} />
-        <span className="text-xs font-semibold" style={{ color }}>{name}</span>
-        <span className="text-[9px] text-[#707088]">{emoji}</span>
+    <div className="bg-slate-50 border border-slate-200 rounded p-3">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+        <span className="text-xs font-semibold text-slate-700">{name}</span>
+        <span className="text-[10px] text-slate-400 bg-white border border-slate-100 px-1 rounded">{emoji}</span>
       </div>
-      <div className="text-[11px] text-[#9090a8] leading-relaxed">{children}</div>
+      <div className="text-[11px] text-slate-500 leading-relaxed">{children}</div>
     </div>
   );
 }
 
 function MutationCard({ type, color, children }: { type: string; color: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#1e1e32] border border-[#3a3a55] rounded p-3">
-      <code className="text-xs font-semibold" style={{ color }}>{type}</code>
-      <div className="text-[11px] text-[#a0a0b8] leading-relaxed mt-1">{children}</div>
+    <div className="bg-white border-l-2 border-slate-200 shadow-sm rounded-r p-3" style={{ borderLeftColor: color }}>
+      <code className="text-xs font-semibold" style={{ color: '#334155' }}>{type}</code>
+      <div className="text-[11px] text-slate-500 leading-relaxed mt-1">{children}</div>
     </div>
   );
 }

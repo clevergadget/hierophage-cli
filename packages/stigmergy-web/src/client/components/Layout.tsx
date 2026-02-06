@@ -21,15 +21,16 @@ const navSections = [
 
 export function Layout() {
   return (
-    <div className="flex h-screen bg-[#161625] text-[#e0e0ec] font-mono">
-      <nav className="w-48 bg-[#1e1e32] border-r border-[#3a3a55] flex flex-col py-6 px-4 shrink-0">
-        <h1 className="text-lg font-bold tracking-widest text-[#f0f0f8] mb-8 px-2">
+    <div className="flex h-screen bg-white text-slate-800 font-sans">
+      <nav className="w-56 bg-slate-50 border-r border-slate-200 flex flex-col py-6 px-4 shrink-0">
+        <h1 className="text-lg font-bold tracking-tight text-slate-900 mb-8 px-2 font-serif flex items-center gap-2">
+          <span className="w-3 h-3 bg-blue-600 rounded-full"></span>
           STIGMERGY
         </h1>
         {navSections.map((section, si) => (
           <div key={si}>
             {section.heading && (
-              <div className="text-[10px] text-[#707088] uppercase tracking-widest px-3 mt-5 mb-2">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mt-6 mb-2">
                 {section.heading}
               </div>
             )}
@@ -39,10 +40,10 @@ export function Layout() {
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  `px-3 py-2 rounded text-sm mb-1 transition-colors block ${
+                  `px-3 py-1.5 rounded-md text-sm mb-0.5 transition-colors block font-medium ${
                     isActive
-                      ? 'bg-[#282845] text-[#60a5fa] font-semibold'
-                      : 'text-[#a0a0b8] hover:text-[#e0e0ec] hover:bg-[#252540]'
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`
                 }
               >
@@ -52,7 +53,7 @@ export function Layout() {
           </div>
         ))}
       </nav>
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto bg-white">
         <Outlet />
       </main>
     </div>

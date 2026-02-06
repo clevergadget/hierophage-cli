@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 export function Concepts() {
   return (
     <div className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-bold text-[#f0f0f8] mb-2">What is Stigmergy?</h1>
-      <p className="text-sm text-[#8888a0] mb-8">
+      <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">What is Stigmergy?</h1>
+      <p className="text-sm text-slate-600 mb-8">
         The foundational principle behind this engine — and why it works.
       </p>
 
@@ -28,22 +28,22 @@ export function Concepts() {
           challenged, and verified as implementable — for a fraction of the cost of a single
           Claude Opus or GPT-4 call.
         </p>
-        <div className="mt-4 bg-[#1e1e32] border border-[#3a3a55] rounded p-4">
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded p-4">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-lg font-bold text-green-400">~$0.06</div>
-              <div className="text-[10px] text-[#707088] mt-1">200-pulse run cost</div>
+              <div className="text-lg font-bold text-emerald-600">~$0.06</div>
+              <div className="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">200-pulse run cost</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-blue-400">106</div>
-              <div className="text-[10px] text-[#707088] mt-1">verified review passes</div>
+              <div className="text-lg font-bold text-blue-600">106</div>
+              <div className="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">verified review passes</div>
             </div>
             <div>
-              <div className="text-lg font-bold text-amber-400">49</div>
-              <div className="text-[10px] text-[#707088] mt-1">converged nodes</div>
+              <div className="text-lg font-bold text-amber-600">49</div>
+              <div className="text-[10px] text-slate-500 mt-1 uppercase tracking-wide">converged nodes</div>
             </div>
           </div>
-          <div className="text-[10px] text-[#606078] text-center mt-3">
+          <div className="text-[10px] text-slate-400 text-center mt-3 font-medium italic">
             From an actual run against "Build a task management app" — 3 minutes wall time
           </div>
         </div>
@@ -98,20 +98,20 @@ export function Concepts() {
           </BioExample>
         </div>
 
-        <div className="mt-4 bg-[#1e1e32] border border-[#3a3a55] rounded p-4">
-          <div className="text-xs font-semibold text-[#e0e0ec] mb-2">Why the biological names?</div>
-          <p className="text-xs text-[#a0a0b8] leading-relaxed">
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded p-4">
+          <div className="text-xs font-semibold text-slate-800 mb-2 uppercase tracking-wide">Why the biological names?</div>
+          <p className="text-xs text-slate-600 leading-relaxed">
             There's a tactical reason beyond accuracy. "Stigmergy" and "software" are not
             co-located in LLM training data. By forcing biological terminology into the
             codebase — pheromones, foraging, necrophoresis, brood care, crystallization —
             we drag biological thinking into every model that reads or modifies this code.
-            When an LLM agent encounters a function called <code className="text-[#e0e0ec] bg-[#282845] px-1 rounded text-xs">necrophoresis()</code>{' '}
-            instead of <code className="text-[#e0e0ec] bg-[#282845] px-1 rounded text-xs">cleanup()</code>,
+            When an LLM agent encounters a function called <code className="text-slate-800 bg-white px-1 py-0.5 rounded text-xs border border-slate-200">necrophoresis()</code>{' '}
+            instead of <code className="text-slate-800 bg-white px-1 py-0.5 rounded text-xs border border-slate-200">cleanup()</code>,
             it activates associations with biological coordination, colony behavior, and
             emergent structure — exactly the mental model we want it operating with.
             The vocabulary is a form of <strong>prompt engineering at the source level</strong>.
           </p>
-          <p className="text-xs text-[#a0a0b8] leading-relaxed mt-2">
+          <p className="text-xs text-slate-600 leading-relaxed mt-2">
             It also works on humans. Imagining little critters foraging across a tree, leaving
             scent trails, pruning dead branches — this engages the playful mind and sustains
             attention through hard engineering problems. A system that can be imagined can be
@@ -131,7 +131,7 @@ export function Concepts() {
           Each pulse focuses on the highest-priority node. Agents decompose broad concepts
           into specific ones, review and deepen content, and eventually settle nodes as
           implementable. The tree converges because the{' '}
-          <Link to="/tree-guide" className="text-blue-400 hover:text-blue-300 underline">
+          <Link to="/tree-guide" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
             signal system
           </Link>{' '}
           drives attention where it's needed most.
@@ -151,51 +151,51 @@ export function Concepts() {
           here," these numbers tell agents where attention is needed:
         </p>
         <div className="mt-3 space-y-3">
-          <Signal name="Need" color="text-red-400" value="0-10">
+          <Signal name="Need" color="text-red-600" value="0-10">
             How urgently this node requires attention. High need attracts agents —
             like a strong pheromone trail attracting more ants.
             Newly created nodes start with high need. As content is written and children
             are created, need decreases.
           </Signal>
-          <Signal name="Confidence" color="text-green-400" value="0-10">
+          <Signal name="Confidence" color="text-green-600" value="0-10">
             How settled and implementable this node is. Low confidence means the spec
             is vague or incomplete. High confidence means an engineer could build from it.
             Confidence rises as agents review and refine content.
           </Signal>
-          <Signal name="Conflict" color="text-amber-400" value="0-10">
+          <Signal name="Conflict" color="text-amber-600" value="0-10">
             Contradictions or problems detected. The{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
               Scout
             </Link>{' '}
             raises conflict on hollow nodes and tautologies. Cross-branch overlap detection
             raises conflict when two nodes in different branches describe the same thing.
             The{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
               Resolver
             </Link>{' '}
             clears conflicts by rewriting content.
           </Signal>
         </div>
-        <p className="mt-4 text-[#a0a0b8]">
+        <p className="mt-4 text-slate-500">
           These three numbers drive everything. Priority is calculated as:{' '}
-          <code className="text-[#e0e0ec] bg-[#282845] px-1.5 py-0.5 rounded text-xs">
+          <code className="text-slate-800 bg-slate-100 px-1 py-0.5 rounded text-xs border border-slate-200">
             need×2 − confidence + conflict×0.5 + scaffold_boost − depth×0.5
           </code>
           . The highest-priority node gets the next pulse. See them in action on the{' '}
-          <Link to="/viz" className="text-blue-400 hover:text-blue-300 underline">
+          <Link to="/viz" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
             Tree Visualization
           </Link>
           .
         </p>
-        <div className="mt-4 bg-[#1e1e32] border border-[#3a3a55] rounded p-4">
-          <div className="text-xs font-semibold text-[#e0e0ec] mb-2">Signal Evaporation (Trace Decay)</div>
-          <p className="text-xs text-[#a0a0b8] leading-relaxed">
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded p-4">
+          <div className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">Signal Evaporation (Trace Decay)</div>
+          <p className="text-xs text-slate-600 leading-relaxed">
             In real ant colonies, unused pheromone trails fade over time. That's what makes the
             system adaptive — old paths disappear if they're not reinforced. The engine implements
-            this: during each maintenance cycle, <strong className="text-[#e0e0ec]">need</strong> decays
-            by 0.25 and <strong className="text-[#e0e0ec]">conflict</strong> decays by 0.08 on nodes
+            this: during each maintenance cycle, <strong className="text-amber-700">need</strong> decays
+            by 0.25 and <strong className="text-amber-700">conflict</strong> decays by 0.08 on nodes
             that haven't been pulse targets in the last 10 pulses.{' '}
-            <strong className="text-[#e0e0ec]">Confidence does not decay</strong> — accumulated
+            <strong className="text-emerald-700">Confidence does not decay</strong> — accumulated
             knowledge persists, just like learning. This forces re-evaluation of stale decisions
             and prevents the tree from fossilizing. Nodes that matter keep getting visited and
             reinforced; nodes that don't gradually fade from priority.
@@ -231,10 +231,10 @@ export function Concepts() {
             solidifies into its final form — like a crystal locking in.
           </PhaseCard>
         </div>
-        <p className="mt-4 text-[#a0a0b8]">
+        <p className="mt-4 text-slate-500">
           Phase is determined automatically from average confidence across all nodes.
           Watch it change during a{' '}
-          <Link to="/run" className="text-blue-400 hover:text-blue-300 underline">
+          <Link to="/run" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">
             live run
           </Link>
           .
@@ -257,11 +257,11 @@ export function Concepts() {
         <p>
           The engine uses <strong>Gemini 2.5 Flash Lite</strong> — a model with absurd capacity:
         </p>
-        <ul className="mt-2 space-y-1 text-[#a0a0b8]">
+        <ul className="mt-2 space-y-1 text-slate-600 list-disc list-inside">
           <li>4,000 requests per minute, unlimited per day</li>
           <li>Input: $0.10/million tokens, Output: $0.40/million tokens</li>
-          <li>A 200-pulse run costs roughly <strong className="text-[#e0e0ec]">$0.06</strong></li>
-          <li>A 1,000-pulse run costs roughly <strong className="text-[#e0e0ec]">$0.30</strong></li>
+          <li>A 200-pulse run costs roughly <strong className="text-emerald-700">$0.06</strong></li>
+          <li>A 1,000-pulse run costs roughly <strong className="text-emerald-700">$0.30</strong></li>
         </ul>
         <p className="mt-3">
           This changes the design calculus entirely. LLM calls are not precious — they're
@@ -280,12 +280,12 @@ export function Concepts() {
         <p>
           A stigmergic tree converges on a specification that is:
         </p>
-        <ul className="mt-2 space-y-1 text-[#a0a0b8]">
-          <li><strong className="text-[#e0e0ec]">Emergent</strong> — no human wrote the structure; it arose from local agent decisions, like a termite mound</li>
-          <li><strong className="text-[#e0e0ec]">Verified</strong> — LLM quality gates check implementability and coverage</li>
-          <li><strong className="text-[#e0e0ec]">Self-correcting</strong> — conflict detection and resolution run continuously, like a slime mold rerouting around obstacles</li>
-          <li><strong className="text-[#e0e0ec]">Observable</strong> — every mutation is logged, every decision is traceable via{' '}
-            <Link to="/replay" className="text-blue-400 hover:text-blue-300 underline">Replay</Link>
+        <ul className="mt-2 space-y-1 text-slate-600 list-disc list-inside">
+          <li><strong className="text-slate-800">Emergent</strong> — no human wrote the structure; it arose from local agent decisions, like a termite mound</li>
+          <li><strong className="text-slate-800">Verified</strong> — LLM quality gates check implementability and coverage</li>
+          <li><strong className="text-slate-800">Self-correcting</strong> — conflict detection and resolution run continuously, like a slime mold rerouting around obstacles</li>
+          <li><strong className="text-slate-800">Observable</strong> — every mutation is logged, every decision is traceable via{' '}
+            <Link to="/replay" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Replay</Link>
           </li>
         </ul>
         <p className="mt-3">
@@ -317,9 +317,9 @@ export function Concepts() {
           <MoatPoint number={2} title="Self-healing by default">
             A hallucination in a linear chat ruins the session. A hallucination in the swarm is
             a low-confidence node that gets eaten by a{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">Grazer</Link>{' '}
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Grazer</Link>{' '}
             or flagged by a{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">Scout</Link>.
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Scout</Link>.
             Error is not catastrophic — it's compost.
           </MoatPoint>
           <MoatPoint number={3} title="Infinite effective context">
@@ -345,42 +345,42 @@ export function Concepts() {
           The system works. Trees converge, specs are genuinely implementable, costs are
           trivial. But there are known gaps — and we're transparent about them:
         </p>
-        <ul className="mt-2 space-y-2 text-[#a0a0b8]">
+        <ul className="mt-2 space-y-2 text-slate-600 list-disc list-inside">
           <li>
-            <strong className="text-[#e0e0ec]">No semantic adversary</strong> — FlashSpore grows,
+            <strong className="text-slate-800">No semantic adversary</strong> — FlashSpore grows,
             Scout checks structure, Verifier checks implementability. Nobody challenges <em>ideas</em>.
             You can specify real-time sync under a batch processing parent and nothing catches
             the logical contradiction. The{' '}
-            <Link to="/agents" className="text-blue-400 hover:text-blue-300 underline">Skeptic agent</Link>{' '}
+            <Link to="/agents" className="text-blue-600 hover:text-blue-800 underline decoration-blue-200 underline-offset-2">Skeptic agent</Link>{' '}
             is the most important missing piece.
           </li>
           <li>
-            <strong className="text-[#e0e0ec]">Evaporation is gentle</strong> — Signal decay rates
+            <strong className="text-slate-800">Evaporation is gentle</strong> — Signal decay rates
             (need: 0.25, conflict: 0.08 per cycle) are conservative. Very long runs may need
             more aggressive tuning.
           </li>
           <li>
-            <strong className="text-[#e0e0ec]">Fixed maintenance scheduling</strong> — The
+            <strong className="text-slate-800">Fixed maintenance scheduling</strong> — The
             maintenance cycle runs every 10 pulses regardless of tree state. Condition-triggered
             scheduling would be more efficient.
           </li>
           <li>
-            <strong className="text-[#e0e0ec]">Phase coupling</strong> — The whole colony moves
+            <strong className="text-slate-800">Phase coupling</strong> — The whole colony moves
             through phases together. Different branches should be able to evolve independently.
           </li>
         </ul>
-        <p className="mt-3 text-[#a0a0b8]">
+        <p className="mt-3 text-slate-500">
           These are known issues with clear solutions, not fundamental limitations. The
           architecture supports all of them — it's a matter of building the next layer.
         </p>
       </Section>
 
       <Section title="Glossary">
-        <p className="mb-3">
+        <p className="mb-3 text-sm text-slate-600">
           Quick reference for the biological terminology used throughout the project.
           These aren't just metaphors — each term maps to a real mechanism.
         </p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <GlossaryTerm term="Pheromone" link="/tree-guide">
             Signal values on nodes (need, confidence, conflict). Named after the chemical markers ants use to coordinate.
           </GlossaryTerm>
@@ -403,7 +403,7 @@ export function Concepts() {
             Initial phase — rapid decomposition of the goal, like spores landing on fresh substrate.
           </GlossaryTerm>
           <GlossaryTerm term="Scent Trail" link="/agents">
-            The branch map that FlashSpore uses for cross-branch overlap detection. Environmental markers, not direct communication.
+            Environmental markers left by agents — pheromone signals on nodes that guide future agent behavior. Local information, not global maps.
           </GlossaryTerm>
           <GlossaryTerm term="Pulse" link="/tree-guide">
             One cycle: scan tree → select target → run agent → apply mutations. The heartbeat of the colony.
@@ -425,62 +425,62 @@ export function Concepts() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-8">
-      <h2 className="text-base font-semibold text-[#f0f0f8] mb-3 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+    <section className="mb-10">
+      <h2 className="text-lg font-serif font-semibold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
         {title}
       </h2>
-      <div className="text-sm text-[#c0c0d4] leading-relaxed">{children}</div>
+      <div className="text-sm text-slate-600 leading-relaxed max-w-2xl">{children}</div>
     </section>
   );
 }
 
 function Future({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-4 bg-[#1a1a30] border border-dashed border-[#3a3a60] rounded p-3">
-      <div className="text-[10px] text-[#7070a0] uppercase tracking-widest mb-2">Future Direction</div>
-      <div className="text-xs text-[#9090aa] leading-relaxed">{children}</div>
+    <div className="mt-4 bg-slate-50 border border-dashed border-slate-300 rounded p-4">
+      <div className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-semibold">Future Direction</div>
+      <div className="text-xs text-slate-600 leading-relaxed">{children}</div>
     </div>
   );
 }
 
 function BioExample({ name, emoji, children }: { name: string; emoji: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#1e1e32] border border-[#3a3a55] rounded p-4">
+    <div className="bg-white border border-slate-200 rounded p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{emoji}</span>
-        <span className="text-sm font-semibold text-[#f0f0f8]">{name}</span>
+        <span className="text-lg bg-slate-50 p-1 rounded-md border border-slate-100">{emoji}</span>
+        <span className="text-sm font-semibold text-slate-800">{name}</span>
       </div>
-      <div className="text-xs text-[#a0a0b8] leading-relaxed">{children}</div>
+      <div className="text-xs text-slate-600 leading-relaxed">{children}</div>
     </div>
   );
 }
 
 function Signal({ name, color, value, children }: { name: string; color: string; value: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#1e1e32] border border-[#3a3a55] rounded p-3">
+    <div className="bg-white border border-slate-200 rounded p-3 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center gap-2 mb-1">
         <span className={`text-sm font-semibold ${color}`}>{name}</span>
-        <span className="text-[10px] text-[#707088]">{value}</span>
+        <span className="text-[10px] text-slate-400 font-mono bg-slate-50 px-1 py-0.5 rounded border border-slate-100">{value}</span>
       </div>
-      <div className="text-xs text-[#a0a0b8] leading-relaxed">{children}</div>
+      <div className="text-xs text-slate-600 leading-relaxed">{children}</div>
     </div>
   );
 }
 
 function PhaseCard({ phase, color, threshold, children }: { phase: string; color: string; threshold: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#1e1e32] border border-[#3a3a55] rounded p-3">
+    <div className="bg-white border border-slate-200 rounded p-3 shadow-sm">
       <div className="flex items-center gap-2 mb-1">
         <span
-          className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded"
-          style={{ background: `${color}22`, color, border: `1px solid ${color}44` }}
+          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
+          style={{ background: `${color}10`, color, borderColor: `${color}30` }}
         >
           {phase}
         </span>
       </div>
-      <div className="text-[10px] text-[#707088] mb-1.5">{threshold}</div>
-      <div className="text-xs text-[#a0a0b8] leading-relaxed">{children}</div>
+      <div className="text-[10px] text-slate-400 mb-1.5 font-mono">{threshold}</div>
+      <div className="text-xs text-slate-600 leading-relaxed">{children}</div>
     </div>
   );
 }
@@ -488,10 +488,10 @@ function PhaseCard({ phase, color, threshold, children }: { phase: string; color
 function MoatPoint({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
   return (
     <div className="flex gap-3">
-      <span className="text-lg font-bold text-blue-400/40 shrink-0 w-6 text-right">{number}</span>
+      <span className="text-lg font-serif font-bold text-slate-200 shrink-0 w-6 text-right select-none">{number}</span>
       <div>
-        <div className="text-sm font-semibold text-[#f0f0f8] mb-1">{title}</div>
-        <div className="text-xs text-[#a0a0b8] leading-relaxed">{children}</div>
+        <div className="text-sm font-semibold text-slate-800 mb-1">{title}</div>
+        <div className="text-xs text-slate-600 leading-relaxed">{children}</div>
       </div>
     </div>
   );
@@ -499,11 +499,11 @@ function MoatPoint({ number, title, children }: { number: number; title: string;
 
 function GlossaryTerm({ term, link, children }: { term: string; link: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#1e1e32] border border-[#3a3a55] rounded p-2.5">
-      <Link to={link} className="text-xs font-semibold text-blue-400 hover:text-blue-300">
+    <div className="bg-white border border-slate-200 rounded p-3 hover:border-blue-200 transition-colors shadow-sm">
+      <Link to={link} className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline">
         {term}
       </Link>
-      <div className="text-[11px] text-[#9090a8] leading-relaxed mt-0.5">{children}</div>
+      <div className="text-[11px] text-slate-500 leading-relaxed mt-1">{children}</div>
     </div>
   );
 }

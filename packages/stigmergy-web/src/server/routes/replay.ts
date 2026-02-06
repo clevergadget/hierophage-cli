@@ -68,7 +68,6 @@ replayRouter.get('/replay/summary', (req, res) => {
       verifier: events.filter((e) => e.type === 'verifier_stability' || e.type === 'verifier_coverage').length,
       resolver: events.filter((e) => e.type === 'resolver').length,
       synthesizer: events.filter((e) => e.type === 'synthesizer').length,
-      overlaps: events.filter((e) => e.type === 'flash_overlap').length,
     },
   });
 });

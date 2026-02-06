@@ -157,7 +157,6 @@ export class RunManager {
       case 'propagation':
       case 'resolver':
       case 'synthesizer':
-      case 'flash_overlap':
         this.broadcast('maintenance', { agent: event.type, details: event });
         break;
     }

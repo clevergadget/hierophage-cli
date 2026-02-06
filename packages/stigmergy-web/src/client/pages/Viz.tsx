@@ -5,10 +5,10 @@ import { NodeDetail } from '../components/NodeDetail';
 import type { VizNode } from '../../shared/types';
 
 const phaseColors: Record<string, string> = {
-  germination: '#a78bfa',
-  foraging: '#60a5fa',
-  'brood-care': '#fbbf24',
-  crystallization: '#4ade80',
+  germination: '#8b5cf6', // violet-500
+  foraging: '#3b82f6',    // blue-500
+  'brood-care': '#f59e0b', // amber-500
+  crystallization: '#22c55e', // green-500
 };
 
 export function Viz() {
@@ -34,28 +34,28 @@ export function Viz() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-[#707088]">Loading...</div>
+      <div className="flex items-center justify-center h-full text-slate-400">Loading...</div>
     );
   }
 
   if (!tree) {
     return (
-      <div className="flex items-center justify-center h-full text-[#707088]">
+      <div className="flex items-center justify-center h-full text-slate-400">
         No workspace. Initialize from the Dashboard.
       </div>
     );
   }
 
   const phase = status?.phase || 'unknown';
-  const phaseColor = phaseColors[phase] || '#a0a0b8';
+  const phaseColor = phaseColors[phase] || '#94a3b8';
   const stats = status?.stats;
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-slate-50">
       {/* Header bar */}
       <div className="flex-1 flex flex-col">
-        <div className="h-14 bg-[#1e1e32] border-b border-[#3a3a55] flex items-center px-6 gap-6 shrink-0">
-          <span className="text-sm font-bold text-[#f0f0f8] tracking-wider">TREE</span>
+        <div className="h-14 bg-white border-b border-slate-200 flex items-center px-6 gap-6 shrink-0 shadow-sm z-10">
+          <span className="text-sm font-serif font-bold text-slate-900 tracking-wider">TREE</span>
           <span
             className="text-[10px] font-semibold px-2.5 py-0.5 rounded uppercase tracking-wider"
             style={{
@@ -68,27 +68,27 @@ export function Viz() {
           </span>
           {stats && (
             <>
-              <span className="text-xs text-[#9090a8]">
-                Nodes: <span className="text-[#e0e0ec] font-semibold">{stats.total_nodes}</span>
+              <span className="text-xs text-slate-500">
+                Nodes: <span className="text-slate-900 font-semibold">{stats.total_nodes}</span>
               </span>
-              <span className="text-xs text-[#9090a8]">
-                Stable: <span className="text-green-400 font-semibold">{stats.stable_count}</span>
+              <span className="text-xs text-slate-500">
+                Stable: <span className="text-emerald-600 font-semibold">{stats.stable_count}</span>
               </span>
-              <span className="text-xs text-[#9090a8]">
+              <span className="text-xs text-slate-500">
                 Conflict:{' '}
-                <span className={`font-semibold ${stats.nodes_in_conflict > 0 ? 'text-red-400' : 'text-[#e0e0ec]'}`}>
+                <span className={`font-semibold ${stats.nodes_in_conflict > 0 ? 'text-red-600' : 'text-slate-900'}`}>
                   {stats.nodes_in_conflict}
                 </span>
               </span>
-              <span className="text-xs text-[#9090a8]">
-                Avg conf: <span className="text-[#e0e0ec] font-semibold">{stats.avg_confidence}</span>
+              <span className="text-xs text-slate-500">
+                Avg conf: <span className="text-slate-900 font-semibold">{stats.avg_confidence}</span>
               </span>
             </>
           )}
         </div>
 
         {/* D3 canvas */}
-        <div className="flex-1">
+        <div className="flex-1 bg-slate-50">
           <TreeViz
             data={tree}
             onSelectNode={handleSelectNode}
@@ -98,19 +98,19 @@ export function Viz() {
         </div>
 
         {/* Legend */}
-        <div className="h-12 bg-[#1e1e32] border-t border-[#3a3a55] flex items-center px-6 gap-7 shrink-0">
-          <LegendItem color="#f87171" label="Urgent" />
-          <LegendItem color="#c17a6a" label="In progress" />
-          <LegendItem color="#7db890" label="Settled" />
-          <LegendItem color="#4ade80" label="Stable" glow />
-          <LegendItem color="#fbbf24" label="Conflict" />
-          <LegendItem color="#c17a6a" label="Scaffold" diamond />
-          <LegendItem color="#c17a6a55" label="Dead" dashed />
+        <div className="h-12 bg-white border-t border-slate-200 flex items-center px-6 gap-7 shrink-0 z-10">
+          <LegendItem color="#ef4444" label="Urgent" />
+          <LegendItem color="#f97316" label="In progress" />
+          <LegendItem color="#10b981" label="Settled" />
+          <LegendItem color="#10b981" label="Stable" glow />
+          <LegendItem color="#f59e0b" label="Conflict" />
+          <LegendItem color="#64748b" label="Scaffold" diamond />
+          <LegendItem color="#94a3b8" label="Dead" dashed />
         </div>
       </div>
 
       {/* Sidebar */}
-      <div className="w-[340px] bg-[#1e1e32] border-l border-[#3a3a55] p-5 overflow-y-auto shrink-0">
+      <div className="w-[400px] bg-white border-l border-slate-200 p-0 overflow-hidden shrink-0 shadow-sm relative z-20">
         <NodeDetail
           node={selectedNode}
           ancestors={ancestors}
@@ -136,15 +136,15 @@ function LegendItem({
   dashed?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 text-[11px] text-[#a0a0b8]">
+    <div className="flex items-center gap-2 text-[11px] text-slate-600 font-medium">
       <div
         className="w-3 h-3 shrink-0"
         style={{
           background: color,
           borderRadius: diamond ? '2px' : '50%',
           transform: diamond ? 'rotate(45deg) scale(0.8)' : undefined,
-          border: dashed ? '1.5px dashed #f87171' : glow ? '2px solid #22c55e' : undefined,
-          boxShadow: glow ? '0 0 6px #4ade8066' : undefined,
+          border: dashed ? '1.5px dashed #94a3b8' : glow ? '2px solid #bef264' : `1px solid ${color}44`,
+          boxShadow: glow ? '0 0 6px rgba(34, 197, 94, 0.4)' : undefined,
           opacity: dashed ? 0.6 : 1,
         }}
       />

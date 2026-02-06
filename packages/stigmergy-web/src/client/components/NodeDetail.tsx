@@ -11,7 +11,7 @@ interface NodeDetailProps {
 export function NodeDetail({ node, ancestors, siblings, onClose }: NodeDetailProps) {
   if (!node) {
     return (
-      <div className="text-[#707088] text-sm mt-16 text-center leading-relaxed">
+      <div className="text-slate-400 text-base mt-20 text-center leading-relaxed italic px-8">
         Click a node to inspect.<br /><br />
         Scroll to zoom. Drag to pan.
       </div>
@@ -22,67 +22,72 @@ export function NodeDetail({ node, ancestors, siblings, onClose }: NodeDetailPro
   const isDead = node.isPlaceholder && !node.isScaffold;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-start justify-between mb-1">
-        <h2 className="text-base font-semibold text-[#f0f0f8]">{node.name}</h2>
-        <button onClick={onClose} className="text-[#707088] hover:text-[#a0a0b8] text-xs">
-          ESC
-        </button>
-      </div>
-      <div className="text-[11px] text-[#8888a0] mb-4 break-all">
-        {node.path === '.' ? '(root)' : node.path}
-      </div>
-
-      <div className="flex gap-1.5 mb-3">
-        {node.isScaffold && (
-          <span className="text-[10px] px-2 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-400">
-            scaffold
-          </span>
-        )}
-        {isStable && (
-          <span className="text-[10px] px-2 py-0.5 rounded border border-green-500/30 bg-green-500/10 text-green-400">
-            stable
-          </span>
-        )}
-        {isDead && (
-          <span className="text-[10px] px-2 py-0.5 rounded border border-red-500/30 bg-red-500/10 text-red-400 border-dashed">
-            dead
-          </span>
-        )}
-      </div>
-
-      {node.conflictReasons.length > 0 && (
-        <div className="mb-3 p-2 rounded bg-amber-400/5 border border-amber-400/20">
-          <div className="text-[10px] text-amber-400 uppercase tracking-wider mb-1.5">Conflict Reasons</div>
-          {node.conflictReasons.map((reason, i) => (
-            <div key={i} className="text-[11px] text-[#c0c0d4] mb-1">
-              &bull; {reason}
-            </div>
-          ))}
+    <div className="flex flex-col h-full bg-white">
+      {/* Fixed Header Section */}
+      <div className="px-6 pt-6">
+        <div className="flex items-start justify-between mb-3">
+          <h2 className="text-xl font-serif font-bold text-slate-900 leading-tight">{node.name}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xs font-semibold px-2 py-1 bg-slate-100 rounded hover:bg-slate-200 transition-colors ml-4">
+            ESC
+          </button>
         </div>
-      )}
+        <div className="text-xs text-slate-500 mb-6 break-all font-mono bg-slate-50 p-2.5 rounded border border-slate-100">
+          {node.path === '.' ? '(root)' : node.path}
+        </div>
 
-      <SignalBar label="Need" value={node.need} type="need" />
-      <SignalBar label="Confidence" value={node.confidence} type="confidence" />
-      <SignalBar label="Conflict" value={node.conflict} type="conflict" />
+        <div className="flex gap-2 mb-6 flex-wrap">
+          {node.isScaffold && (
+            <span className="text-xs px-2.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 font-bold tracking-wide uppercase">
+              scaffold
+            </span>
+          )}
+          {isStable && (
+            <span className="text-xs px-2.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold tracking-wide uppercase">
+              stable
+            </span>
+          )}
+          {isDead && (
+            <span className="text-xs px-2.5 py-0.5 rounded border border-red-200 bg-red-50 text-red-700 border-dashed font-bold tracking-wide uppercase">
+              dead
+            </span>
+          )}
+        </div>
 
-      <div className="mt-4 pt-4 border-t border-[#3a3a55] overflow-y-auto flex-1">
+        {node.conflictReasons.length > 0 && (
+          <div className="mb-6 p-4 rounded bg-amber-50 border border-amber-200">
+            <div className="text-xs text-amber-700 uppercase tracking-wider mb-2 font-bold">Conflict Reasons</div>
+            {node.conflictReasons.map((reason, i) => (
+              <div key={i} className="text-sm text-slate-700 mb-1.5 pl-3 border-l-2 border-amber-300">
+                {reason}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-1.5 mb-6">
+          <SignalBar label="Need" value={node.need} type="need" />
+          <SignalBar label="Confidence" value={node.confidence} type="confidence" />
+          <SignalBar label="Conflict" value={node.conflict} type="conflict" />
+        </div>
+      </div>
+
+      <div className="mt-0 pt-6 px-6 pb-6 border-t border-slate-200 overflow-y-auto flex-1 custom-scrollbar">
         {ancestors && ancestors.length > 0 && (
           ancestors.map((a, i) => (
-            <div key={a.path} className="mb-3 pb-3 border-b border-[#282845] last:border-0">
-              <div className="text-[11px] text-[#a8a8b4] flex items-center gap-1.5 mb-1">
-                <span className="bg-[#282845] text-[#8888a0] px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">
+            <div key={a.path} className="mb-6 pb-6 border-b border-slate-100 last:border-0">
+              <div className="text-xs text-slate-400 flex items-center gap-2 mb-2">
+                <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold border border-slate-200">
                   {i === 0 ? 'ROOT' : `DEPTH ${i}`}
                 </span>
-                <span className="text-[#c4c4d0]">{a.name}</span>
+                <span className="text-slate-700 font-medium">{a.name}</span>
               </div>
-              <div className="text-[10px] text-[#707088]">
-                <span className="text-red-400">n:{a.need}</span>{' '}
-                <span className="text-green-400">c:{a.confidence}</span>
-                {a.conflict > 0 && <span className="text-amber-400"> x:{a.conflict}</span>}
+              <div className="text-xs text-slate-400 font-mono pl-1 mb-2">
+                <span className={a.need > 5 ? "text-red-500 font-bold" : ""}>n:{a.need}</span>{' '}
+                <span className="text-emerald-600">c:{a.confidence}</span>
+                {a.conflict > 0 && <span className="text-amber-500 font-bold"> x:{a.conflict}</span>}
               </div>
               {a.content && (
-                <div className="text-[11px] text-[#9090a8] mt-1 whitespace-pre-wrap line-clamp-3">
+                <div className="text-sm text-slate-500 mt-2 whitespace-pre-wrap line-clamp-3 pl-3 border-l-2 border-slate-100 italic">
                   {a.content}
                 </div>
               )}
@@ -91,35 +96,37 @@ export function NodeDetail({ node, ancestors, siblings, onClose }: NodeDetailPro
         )}
 
         {/* Current node content */}
-        <div className="mb-3 pb-3 border-b border-[#282845]">
-          <div className="text-xs text-[#a8a8b4] flex items-center gap-1.5 mb-1">
-            <span className="bg-[#282845] text-[#8888a0] px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">
+        <div className="mb-6 pb-6 border-b border-slate-100">
+          <div className="text-sm text-slate-400 flex items-center gap-2 mb-3">
+            <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold border border-slate-200">
               {node.path === '.' ? 'ROOT' : `DEPTH ${ancestors?.length ?? 0}`}
             </span>
-            <span className="text-[#f0f0f8] font-semibold">{node.name}</span>
+            <span className="text-slate-900 font-bold">{node.name}</span>
           </div>
           {node.content && (
-            <div className="text-[13px] text-[#c0c0d4] mt-1 whitespace-pre-wrap leading-relaxed">
+            <div className="text-[15px] text-slate-800 mt-2 whitespace-pre-wrap leading-relaxed">
               {node.content}
             </div>
           )}
         </div>
 
         {siblings && siblings.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-[#3a3a55]">
-            <div className="text-[10px] text-[#8888a0] uppercase tracking-wider mb-1.5">Siblings</div>
-            {siblings.map((s) => (
-              <div key={s.path} className="text-[11px] text-[#9090a8] mb-1">
-                <span
-                  className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
-                  style={{ background: nodeColor(s.confidence, s.conflict) }}
-                />
-                {s.name}
-                <span className="text-[10px] text-[#707088] ml-1">
-                  n:{s.need} c:{s.confidence}
-                </span>
-              </div>
-            ))}
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <div className="text-xs text-slate-400 uppercase tracking-wider mb-3 font-bold">Siblings</div>
+            <div className="space-y-1.5">
+              {siblings.map((s) => (
+                <div key={s.path} className="text-sm text-slate-600 flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded transition-colors -mx-1.5">
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full border border-slate-200"
+                    style={{ background: nodeColor(s.confidence, s.conflict) }}
+                  />
+                  <span className="truncate flex-1">{s.name}</span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    n:{s.need} c:{s.confidence}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -130,8 +137,9 @@ export function NodeDetail({ node, ancestors, siblings, onClose }: NodeDetailPro
 function nodeColor(confidence: number, conflict: number): string {
   if (conflict > 2) return '#fbbf24';
   const t = confidence / 10;
-  const r = Math.round(248 * (1 - t) + 74 * t);
-  const g = Math.round(113 * (1 - t) + 222 * t);
-  const b = Math.round(113 * (1 - t) + 128 * t);
+  // Adjusted for light mode (slightly more saturated/darker to stand out against white)
+  const r = Math.round(239 * (1 - t) + 34 * t);  // Red-500 to Emerald-500 approx
+  const g = Math.round(68 * (1 - t) + 197 * t);
+  const b = Math.round(68 * (1 - t) + 94 * t);
   return `rgb(${r},${g},${b})`;
 }

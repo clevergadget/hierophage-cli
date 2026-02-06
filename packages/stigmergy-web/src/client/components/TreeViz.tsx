@@ -13,11 +13,12 @@ type D3Node = d3.HierarchyPointNode<VizNode>;
 
 function nodeColor(d: D3Node): string {
   const data = d.data;
-  if (data.conflict > 2) return '#fbbf24';
+  if (data.conflict > 2) return '#f59e0b'; // amber-500
   const t = data.confidence / 10;
-  const r = Math.round(248 * (1 - t) + 74 * t);
-  const g = Math.round(113 * (1 - t) + 222 * t);
-  const b = Math.round(113 * (1 - t) + 128 * t);
+  // Adjusted for light mode (Red-500 to Emerald-500)
+  const r = Math.round(239 * (1 - t) + 34 * t);
+  const g = Math.round(68 * (1 - t) + 197 * t);
+  const b = Math.round(68 * (1 - t) + 94 * t);
   return `rgb(${r},${g},${b})`;
 }
 
@@ -106,7 +107,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       .join('path')
       .attr('class', 'link')
       .attr('fill', 'none')
-      .attr('stroke', '#3a3a55')
+      .attr('stroke', '#e2e8f0') // slate-200
       .attr('stroke-width', 1.5)
       .attr(
         'd',
@@ -139,7 +140,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       const color = nodeColor(d);
       const stable = isStable(d);
       const dead = isDead(d);
-      const strokeColor = stable ? '#4ade80' : dead ? '#f87171' : '#3a3a55';
+      const strokeColor = stable ? '#10b981' : dead ? '#ef4444' : '#cbd5e1'; // stable: emerald-500, dead: red-500, normal: slate-300
       const strokeW = stable ? 2.5 : dead ? 1.5 : 1;
       const strokeDash = dead ? '3,2' : 'none';
 
@@ -180,7 +181,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
         el.append('circle')
           .attr('r', r + 4)
           .attr('fill', 'none')
-          .attr('stroke', '#4ade80')
+          .attr('stroke', '#10b981')
           .attr('stroke-width', 1)
           .attr('opacity', 0.3);
       }
@@ -218,9 +219,9 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       .attr('text-anchor', 'start')
       .text((d) => d.data.name)
       .attr('fill', (d) => {
-        if (d.data.path === '.') return '#f0f0f8';
-        if (isStable(d)) return '#4ade80';
-        return '#c0c0d4';
+        if (d.data.path === '.') return '#0f172a'; // slate-900 (root)
+        if (isStable(d)) return '#059669'; // emerald-600 (stable)
+        return '#475569'; // slate-600 (default)
       })
       .attr('font-weight', (d) => (d.data.path === '.' ? '700' : '400'))
       .attr('font-size', (d) => (d.data.path === '.' ? '14px' : '12px'))
@@ -237,15 +238,15 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
       .attr('dy', '0.35em')
       .attr('text-anchor', 'start')
       .text((d) => (d.data.conflict > 0 ? `x:${d.data.conflict}` : ''))
-      .attr('fill', '#fbbf24')
+      .attr('fill', '#f59e0b') // amber-500
       .attr('font-size', '10px')
-      .attr('opacity', 0.7);
+      .attr('opacity', 0.9);
 
     // Selection ring
     const selectionRing = g
       .append('circle')
       .attr('fill', 'none')
-      .attr('stroke', '#60a5fa')
+      .attr('stroke', '#2563eb') // blue-600
       .attr('stroke-width', 2)
       .attr('stroke-dasharray', '4,3')
       .attr('opacity', 0)
@@ -264,7 +265,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
     svg.on('click', () => {
       const state = d3StateRef.current;
       if (state) {
-        state.allLinks.attr('stroke', '#3a3a55').attr('stroke-width', 1.5);
+        state.allLinks.attr('stroke', '#e2e8f0').attr('stroke-width', 1.5);
         state.nodeSelection.attr('opacity', 1);
         state.selectionRing.attr('opacity', 0);
         if (state.selectionAnimFrame) cancelAnimationFrame(state.selectionAnimFrame);
@@ -287,7 +288,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
 
     if (!selectedPath) {
       // Clear highlight
-      allLinks.attr('stroke', '#3a3a55').attr('stroke-width', 1.5);
+      allLinks.attr('stroke', '#e2e8f0').attr('stroke-width', 1.5);
       nodeSelection.attr('opacity', 1);
       selectionRing.attr('opacity', 0);
       if (state.selectionAnimFrame) cancelAnimationFrame(state.selectionAnimFrame);
@@ -308,7 +309,7 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
 
     allLinks
       .attr('stroke', (l) =>
-        ancestorLinks.has(l.source.data.path + '→' + l.target.data.path) ? '#60a5fa' : '#3a3a55',
+        ancestorLinks.has(l.source.data.path + '→' + l.target.data.path) ? '#475569' : '#e2e8f0',
       )
       .attr('stroke-width', (l) =>
         ancestorLinks.has(l.source.data.path + '→' + l.target.data.path) ? 2.5 : 1.5,
@@ -333,5 +334,5 @@ export function TreeViz({ data, onSelectNode, onClearSelection, selectedPath }: 
     };
   }, [selectedPath]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return <div ref={containerRef} className="w-full h-full bg-slate-50" />;
 }
