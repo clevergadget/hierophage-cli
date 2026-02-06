@@ -1,98 +1,514 @@
 # Stigmergy Project Migration Design Document
 
+*Extract `@hierophage/stigmergy` and `@hierophage/stigmergy-web` from the hierophage-cli monorepo into a standalone repository. This document should live at the new repo root after migration, then be deleted once validated.*
+
+---
+
 ## 1. Objective
-Separate the `@hierophage/stigmergy` (core engine) and `@hierophage/stigmergy-web` (visualization dashboard) packages from the `hierophage-cli` fork into a standalone, lightweight monorepo. The goal is to create a portable, easy-to-share repository that maintains generic build tooling without the weight of the original CLI project.
+
+Separate the two stigmergy packages from the gemini-cli fork into a standalone, lightweight monorepo. The new repo should be:
+
+- **Portable**: cloneable and runnable without any knowledge of hierophage-cli
+- **Self-contained**: no references to parent repo scripts, configs, or paths
+- **History-preserving**: full git history for both packages carried over
+- **Immediately usable**: `npm install && npm run build && npm test` works on first clone
 
 ## 2. Analysis of Current State
-*   **Location**: Currently nested within `packages/` in a large monorepo.
-*   **Coupling**:
-    *   **Runtime**: The packages are loosely coupled to the rest of the CLI. Imports are primarily internal or to standard libraries. There are zero runtime dependencies on sibling packages (like `core` or `cli`) other than `@hierophage/stigmergy` itself.
-    *   **Build Time**: Highly coupled. Relies on:
-        *   Root `package.json` for devDependencies (Typescript, Vitest, ESLint, Prettier).
-        *   Root `tsconfig.json` for base configuration.
-        *   Root `eslint.config.js`.
-        *   Shared `scripts/build_package.js` and `scripts/copy_files.js`.
 
-## 3. Target Architecture
-We will adopt a standard **NPM Workspace** (or Yarn/PNPM) structure. This minimizes tooling complexity while allowing the `web` package to consume the `core` package locally.
+### Runtime Coupling
 
-### Proposed Directory Structure
+**Loose.** Zero runtime imports from sibling packages (`core`, `cli`, etc.). The only cross-package dependency is `@hierophage/stigmergy-web` → `@hierophage/stigmergy` (via `"*"` version in package.json).
+
+### Build-Time Coupling
+
+**Tight.** Both packages depend on infrastructure from the parent monorepo:
+
+| Dependency | Source | What It Provides |
+|-----------|--------|-----------------|
+| `tsconfig.json` | Root | Base TypeScript config. `stigmergy` extends it; `stigmergy-web` does NOT (has its own standalone configs) |
+| `eslint.config.js` | Root | Linting rules. Contains ignores for gemini-cli internals we don't need |
+| `scripts/build_package.js` | Root `scripts/` | Runs `tsc --build`, then copies `.md`/`.json` files to `dist/` via `copy_files.js` |
+| `scripts/copy_files.js` | Root `scripts/` | Copies non-TS files to dist. Called by `build_package.js` |
+| DevDependencies | Root `package.json` | `typescript`, `vitest`, `eslint`, `prettier`, `tsx`, `@types/node`, etc. — hoisted to root |
+
+### Package Details
+
+**`@hierophage/stigmergy`** (core engine):
+- Type: ES module, Node >=20
+- Bin: `"stig": "dist/src/cli/cli.js"` — this is the CLI entry point
+- Build: `node ../../scripts/build_package.js` (parent repo script)
+- Dependencies: `@google/genai@1.30.0`, `chalk@^5.4.1`, `yaml@^2.7.0`, `yargs@^17.7.2`
+- DevDependencies: `@types/yargs@^17.0.33`, `typescript@^5.3.3`, `vitest@^3.1.1`
+- tsconfig: extends `../../tsconfig.json`
+
+**`@hierophage/stigmergy-web`** (dashboard):
+- Type: ES module, Node >=20
+- No bin field (web app, not CLI)
+- Build: `vite build && tsc -p tsconfig.server.json`
+- Dev: `concurrently` runs Express (tsx watch, port 3001) + Vite (port 5173) with `/api` proxy
+- Dependencies: `@hierophage/stigmergy@*`, `express@^5.1.0`, `cors@^2.8.5`, `chokidar@^4.0.3`
+- DevDependencies: React 19, D3 7, Vite 6, Tailwind 4, tsx, concurrently, type packages
+- tsconfig: TWO configs, neither extends root:
+  - `tsconfig.json` — client (React, `module: "ESNext"`, `moduleResolution: "bundler"`, includes DOM libs)
+  - `tsconfig.server.json` — server (Express, `module: "NodeNext"`, `moduleResolution: "nodenext"`, outputs to `dist/server`)
+
+### Environment Requirements
+
+- `GEMINI_API_KEY` — required for `stig run`, `stig verify`, `stig resolve`, and the web dashboard's run manager
+- `STIG_ROOT` — optional, set by run manager when forking the CLI process
+
+### What `build_package.js` Actually Does
+
+1. Runs `tsc --build` from the package directory
+2. Calls `copy_files.js` to copy `.md` and `.json` files to `dist/`
+3. Creates `dist/.last_build` timestamp marker
+
+This is replaceable with two lines in a package script:
+```json
+"build": "tsc --build && node scripts/copy-assets.js"
+```
+Or even simpler — the `.md`/`.json` copying is only needed if we publish to npm. For development, `tsc --build` alone suffices.
+
+---
+
+## 3. Decisions to Make Before Starting
+
+### Package Scope
+
+The packages are currently `@hierophage/stigmergy` and `@hierophage/stigmergy-web`. If you don't own the `@hierophage` npm org, you cannot publish under this scope. Options:
+
+1. **Claim `@hierophage` on npm** — if available, register it now
+2. **Rename to unscoped** — `stigmergy-engine` and `stigmergy-web` (or similar)
+3. **New scope** — `@stigmergy/core` and `@stigmergy/web`
+
+**This must be decided before extraction**, not after. Renaming after migration means updating every import in `stigmergy-web` that references `@hierophage/stigmergy`, every `package.json` name field, and the workspace dependency. Do it once in the extraction phase.
+
+### Package Manager
+
+Use **npm** (not pnpm or yarn). Both packages currently use npm, the lockfile is `package-lock.json`, and workspace syntax is `"workspaces": ["packages/*"]`. No reason to switch.
+
+---
+
+## 4. Target Architecture
+
 ```text
-stigmergy-monorepo/
-├── .gitignore             # Specific to this project
-├── package.json           # New root workspace definition
-├── tsconfig.json          # Base configuration (migrated)
-├── eslint.config.js       # Linting rules (migrated)
-├── scripts/               # extracted build tooling
-│   ├── build_package.js
-│   └── copy_files.js
+stigmergy/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── .gitignore
+├── .env.example              # Documents required environment variables
+├── README.md                 # Onboarding: what this is, how to install, how to run
+├── package.json              # Workspace root
+├── package-lock.json         # Generated by npm install
+├── tsconfig.json             # Base TypeScript config (stigmergy extends this)
+├── eslint.config.js          # Linting rules (cleaned of gemini-cli ignores)
 └── packages/
-    ├── stigmergy/         # Core logic
-    └── stigmergy-web/     # Viz/UI
+    ├── stigmergy/            # Core engine + CLI
+    │   ├── package.json
+    │   ├── tsconfig.json     # extends ../../tsconfig.json
+    │   ├── src/
+    │   ├── tests/
+    │   └── docs/
+    └── stigmergy-web/        # Dashboard
+        ├── package.json
+        ├── tsconfig.json         # Standalone (client, React/Vite)
+        ├── tsconfig.server.json  # Standalone (server, Express/Node)
+        ├── vite.config.ts
+        └── src/
 ```
 
-## 4. detailed Migration Plan
+**Notable absence: `scripts/` directory.** The parent repo's `build_package.js` and `copy_files.js` are not carried over. Build commands use `tsc` directly.
 
-### Phase 1: Repository Initialization
-1.  Initialize a new empty git repository.
-2.  Create a `.gitignore` specifically tailored for this project (ignoring `node_modules`, `dist`, `.env.local`, coverage reports).
+---
 
-### Phase 2: Code Extraction
-1.  **Core Package**: Copy `packages/stigmergy` -> `new-repo/packages/stigmergy`.
-2.  **Web Package**: Copy `packages/stigmergy-web` -> `new-repo/packages/stigmergy-web`.
-3.  **Sanitization**:
-    *   Delete nested `node_modules` and `dist` directories to ensure a clean state.
-    *   Verify `package.json` in both packages. Ensure `@hierophage/stigmergy-web` depends on `*` or `workspace:*` version of `@hierophage/stigmergy`.
+## 5. Migration Plan
 
-### Phase 3: Build System Relocation
-The current projects rely on scripts located two levels up (`../../scripts`). We must preserve this relative pathing or update the package scripts.
+### Phase 0: Pre-Flight Decision
 
-1.  **Create Scripts Directory**: `mkdir scripts` in the new repo root.
-2.  **Migrate Scripts**:
-    *   Copy `hierophage-cli/scripts/build_package.js` -> `new-repo/scripts/`.
-    *   Copy `hierophage-cli/scripts/copy_files.js` -> `new-repo/scripts/`.
-3.  **Validate Configs**:
-    *   *Self-Check*: `build_package.js` contains a check `if (!process.cwd().includes('packages'))`. This logic remains valid in the new structure and requires no changes.
-    *   *Path Check*: The `scripts` in `packages/stigmergy/package.json` call `node ../../scripts/build_package.js`. This relative path remains valid in the new structures.
+Decide on package scope (Section 3). This affects every subsequent step.
 
-### Phase 4: Root Configuration (The Critical Step)
-Dependencies currently provided by the monorepo root must be explicitly defined in the new root.
+### Phase 1: Repository Extraction With History
 
-1.  **`tsconfig.json`**: Copy the root `tsconfig.json`.
-    *   *Action*: Ensure `include` and `exclude` paths are generic enough for the new repo.
-2.  **`eslint.config.js`**: Copy the root config.
-    *   *Refinement*: You may want to simplify the `ignores` list to remove irrelevant paths (like `gemini-cli` internals, `sandbox` etc).
-3.  **Root `package.json`**: Create a new file.
-    *   **Workspaces**: `["packages/*"]`
-    *   **Scripts**:
-        ```json
-        "build": "npm run build --workspaces",
-        "test": "npm run test --workspaces --if-present",
-        "dev": "npm run dev -w @hierophage/stigmergy-web"
-        ```
-    *   **DevDependencies**: You must manually identify which versions are currently used. Based on current checks, install:
-        *   `typescript`
-        *   `vitest`
-        *   `eslint`, `typescript-eslint`, `@eslint/js`, `globals`
-        *   `prettier`, `eslint-config-prettier`
-        *   `tsx` (for running TS scripts if needed)
-        *   `@types/node`
+**Do NOT create an empty repo.** Use `git filter-repo` to extract both packages with full commit history.
 
-### Phase 5: CI/CD & Automation
-Since we are losing the parent repo's CI:
-1.  **GitHub Actions**: Create `.github/workflows/ci.yml`.
-    *   Trigger: On push to main, and PRs.
-    *   Steps: `npm install`, `npm run build`, `npm run test`, `npm run lint`.
+```bash
+# Clone the monorepo (don't filter in-place)
+git clone hierophage-cli stigmergy-extraction
+cd stigmergy-extraction
 
-## 5. Verification Checklist
+# Extract only the two packages, rewriting paths to repo root
+git filter-repo \
+  --path packages/stigmergy/ \
+  --path packages/stigmergy-web/ \
+  --path-rename packages/:packages/
 
-- [ ] **Install**: `npm install` runs cleanly in the root.
-- [ ] **Linking**: `packages/stigmergy-web` node_modules contains a symlink to `../stigmergy`.
-- [ ] **Build Core**: `cd packages/stigmergy && npm run build` completes and generates `dist/`.
-- [ ] **Build Web**: `cd packages/stigmergy-web && npm run build` completes using the local core build.
-- [ ] **Tests**: Unit tests pass in the core package.
-- [ ] **Runtime**: `npm run dev` in the web package launches the UI and it connects to the server successfully.
+# Result: a repo with full history for both packages,
+# with paths preserved as packages/stigmergy/ and packages/stigmergy-web/
+```
 
-## 6. Future Considerations
-*   **Renaming**: If you wish to drop the `@hierophage` scope or rename the packages, do it immediately after migration (Phase 2) before publishing or sharing.
-*   **Publishing**: If you plan to publish to NPM, you may need a tool like `changesets` or `lerna` to manage versioning, as the current repo uses a simplified custom release process.
+If `git filter-repo` is not installed: `pip install git-filter-repo` or `brew install git-filter-repo`.
+
+**Verify history preservation:**
+```bash
+git log --oneline packages/stigmergy/src/agents/termite.ts
+# Should show the full commit history for this file
+```
+
+**Sanitize:**
+```bash
+rm -rf packages/stigmergy/node_modules packages/stigmergy/dist
+rm -rf packages/stigmergy-web/node_modules packages/stigmergy-web/dist
+rm -f packages/stigmergy/MIGRATION_DESIGN.md  # This file — move to root or delete
+```
+
+### Phase 2: Build System Replacement
+
+Replace the parent repo's custom build scripts with standard tooling.
+
+**`packages/stigmergy/package.json`** — update the `build` script:
+
+```json
+{
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run",
+    "test:ci": "vitest run",
+    "typecheck": "tsc --noEmit"
+  }
+}
+```
+
+The `.md`/`.json` file copying (`copy_files.js`) is only needed for npm publishing. If/when that's needed, add a postbuild script. For now, `tsc --build` is sufficient.
+
+**`packages/stigmergy-web/package.json`** — no changes needed. It already uses `vite build` and `tsc -p tsconfig.server.json` directly, with no reference to parent scripts.
+
+### Phase 3: Root Configuration
+
+#### `tsconfig.json` (base config)
+
+Copy from the current root, but only the settings that `packages/stigmergy/tsconfig.json` actually needs (it's the only package that extends root). `stigmergy-web` has its own standalone configs.
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "forceConsistentCasingInFileNames": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUnusedLocals": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "composite": true,
+    "incremental": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "target": "es2022",
+    "types": ["node", "vitest/globals"],
+    "jsx": "react-jsx"
+  }
+}
+```
+
+#### `eslint.config.js`
+
+Copy from root. Remove all ignores referencing gemini-cli paths (`sandbox`, `src/`, `.hierophage/`, etc.). Keep only:
+- `node_modules`
+- `dist`
+- `packages/*/dist`
+
+#### `package.json` (workspace root)
+
+```json
+{
+  "name": "stigmergy-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20.0.0" },
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "npm run build -w @hierophage/stigmergy && npm run build -w @hierophage/stigmergy-web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "npm run dev -w @hierophage/stigmergy-web",
+    "lint": "eslint packages/"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.2",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3",
+    "typescript-eslint": "^8.30.1"
+  }
+}
+```
+
+**Build ordering matters.** `stigmergy-web` depends on `stigmergy`, so the build script runs them sequentially, not `--workspaces` (which runs in parallel with no ordering guarantee). The explicit `-w` flags enforce correct order.
+
+**DevDependencies are minimal.** Each package declares its own `typescript`, `vitest`, `tsx`, etc. The root only needs what's shared across packages (eslint, prettier, types). This is intentional — each package should be buildable with its own deps.
+
+Exact versions extracted from current root `package.json`:
+- `eslint@^9.24.0`
+- `eslint-config-prettier@^10.1.2`
+- `globals@^16.0.0`
+- `prettier@^3.5.3`
+- `typescript-eslint@^8.30.1`
+
+#### `.env.example`
+
+```bash
+# Required for stig run, stig verify, stig resolve, and the web dashboard run manager
+GEMINI_API_KEY=your-api-key-here
+
+# Optional: override the default model (gemini-2.5-flash-lite)
+# STIG_MODEL=gemini-2.5-flash
+```
+
+#### `.gitignore`
+
+```
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+coverage/
+```
+
+### Phase 4: Package Adjustments
+
+#### Update workspace dependency
+
+In `packages/stigmergy-web/package.json`, ensure the dependency uses workspace protocol:
+```json
+{
+  "dependencies": {
+    "@hierophage/stigmergy": "*"
+  }
+}
+```
+
+The `"*"` version resolves to the local workspace package via npm workspaces. This is already correct in the current config.
+
+#### If renaming packages (from Phase 0 decision)
+
+If dropping the `@hierophage` scope, update:
+1. `packages/stigmergy/package.json` — `name` field
+2. `packages/stigmergy-web/package.json` — `name` field and dependency name
+3. All imports in `stigmergy-web/src/` that reference `@hierophage/stigmergy`:
+   ```bash
+   grep -r "@hierophage/stigmergy" packages/stigmergy-web/src/
+   ```
+4. Root `package.json` — workspace script `-w` names
+5. `packages/stigmergy-web/src/server/run-manager.ts` line 63 — the `stigBin` path resolution uses `import.meta.dirname` and relative paths, which are scope-independent. No change needed.
+
+#### Platform-specific dependency: lightningcss
+
+`stigmergy-web` uses Tailwind 4 which requires lightningcss. On macOS x64, this may need explicit installation:
+```bash
+npm install lightningcss-darwin-x64 --save-optional -w @hierophage/stigmergy-web
+```
+
+Add a note to the README about this. On ARM Macs and Linux, npm resolves the correct binary automatically.
+
+### Phase 5: README
+
+Create `README.md` at the repo root. Must cover:
+
+```markdown
+# Stigmergy
+
+A stigmergic specification engine. Grows software specifications through
+emergent AI agent coordination on a filesystem-backed tree.
+
+## Quick Start
+
+1. Clone and install:
+   ```bash
+   git clone <repo-url>
+   cd stigmergy
+   npm install
+   npm run build
+   ```
+
+2. Set your API key:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Gemini API key
+   ```
+
+3. Initialize a workspace:
+   ```bash
+   npx stig init "Build a todo list web application" -c "TypeScript" -c "React"
+   ```
+
+4. Run the engine:
+   ```bash
+   npx stig run --confirm --max-pulses 50
+   ```
+
+5. Launch the dashboard:
+   ```bash
+   npm run dev
+   # Open http://localhost:5173
+   ```
+
+## Packages
+
+- **@hierophage/stigmergy** — Core engine, agents, CLI (`stig` command)
+- **@hierophage/stigmergy-web** — Local web dashboard (Vite + React + Express)
+
+## Development
+
+```bash
+npm run build        # Build both packages (ordered)
+npm test             # Run all tests
+npm run typecheck    # Type-check without building
+npm run dev          # Launch web dashboard in dev mode
+```
+```
+
+### Phase 6: CI/CD
+
+The current repo has **no GitHub Actions CI**. Create `.github/workflows/ci.yml`:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build (ordered — core then web)
+        run: npm run build
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+```
+
+**Build ordering is handled by the root `build` script** (sequential `-w` flags), so the CI just calls `npm run build`.
+
+---
+
+## 6. Verification Checklist
+
+Run each check in the new repo from a clean state (`rm -rf node_modules packages/*/node_modules && npm install`).
+
+### Build & Link
+
+- [ ] `npm install` completes without errors
+- [ ] `ls -la packages/stigmergy-web/node_modules/@hierophage/stigmergy` shows symlink to `../../stigmergy`
+- [ ] `npm run build` completes (both packages, correct order)
+- [ ] `packages/stigmergy/dist/src/cli/cli.js` exists
+- [ ] `packages/stigmergy/dist/src/index.js` exists
+- [ ] `packages/stigmergy-web/dist/server/index.js` exists
+
+### Type-Check
+
+- [ ] `npm run typecheck` passes (both packages)
+- [ ] `cd packages/stigmergy && npx tsc --noEmit` passes standalone
+- [ ] `cd packages/stigmergy-web && npx tsc --noEmit && npx tsc -p tsconfig.server.json --noEmit` passes standalone
+
+### Tests
+
+- [ ] `npm test` — all 188 tests pass
+- [ ] Tests can run without `GEMINI_API_KEY` set (mock tests don't need it)
+
+### CLI
+
+- [ ] `npx stig --help` prints usage
+- [ ] `npx stig init "Test goal"` creates a workspace in the current directory
+- [ ] `GEMINI_API_KEY=<key> npx stig run --confirm --max-pulses 5` executes 5 pulses
+- [ ] `npx stig replay` shows telemetry timeline
+
+### Web Dashboard
+
+- [ ] `npm run dev` starts both Express (3001) and Vite (5173)
+- [ ] `curl http://localhost:3001/api/tree` returns JSON (or 404 if no workspace — either is fine, no crash)
+- [ ] `http://localhost:5173` loads the dashboard UI
+- [ ] Vite proxy works: browser requests to `/api/*` reach the Express server
+
+### Git History
+
+- [ ] `git log --oneline packages/stigmergy/src/agents/termite.ts` shows history from before migration
+- [ ] `git log --oneline --all | wc -l` shows a reasonable number of commits (not just 1)
+
+### Environment
+
+- [ ] `.env.example` exists and documents `GEMINI_API_KEY`
+- [ ] `.env` is in `.gitignore`
+- [ ] No `.env` or API keys committed
+
+---
+
+## 7. Rollback Plan
+
+The original packages remain in `hierophage-cli/packages/` untouched. Development continues in the original repo until:
+
+1. The new repo passes ALL verification checks above
+2. The web dashboard successfully runs a 50-pulse session with live SSE
+3. At least one full development cycle (new feature or bug fix) is completed in the new repo
+
+**Timeline:** Keep both repos for 2 weeks after verification passes. During this period, all new work happens in the new repo. If anything breaks that can't be fixed, revert to `hierophage-cli/packages/` and investigate.
+
+**Do not delete the packages from hierophage-cli** until the 2-week validation period ends.
+
+---
+
+## 8. Post-Migration Cleanup
+
+After validation:
+
+1. Delete `packages/stigmergy/` and `packages/stigmergy-web/` from `hierophage-cli`
+2. Remove workspace entries from hierophage-cli root `package.json`
+3. Delete this file (`MIGRATION_DESIGN.md`) from the new repo — it has served its purpose
+4. Update `hierophage-cli/CLAUDE.md` to note that stigmergy packages have moved
+
+---
+
+## 9. Future Considerations
+
+- **npm publishing**: If publishing to npm, add `changesets` or `release-please` for versioning. The `files` field in `packages/stigmergy/package.json` already limits published content to `dist/`.
+- **The `.md`/`.json` copy step**: Currently handled by `build_package.js` (copies docs to dist). Only needed if publishing. Add a `postbuild` script when the time comes: `cp -r docs dist/docs && cp package.json dist/`.
+- **Monorepo tool upgrade**: If the project grows beyond 2 packages, consider `turborepo` for build caching and task orchestration. For 2 packages, npm workspaces is sufficient.

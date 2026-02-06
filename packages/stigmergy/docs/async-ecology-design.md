@@ -18,7 +18,7 @@ This is a cron job wearing a biology costume. Real ant colonies don't pause fora
 
 1. **Temporal blindness.** The Termite runs 2 inspections per maintenance cycle. With 73 nodes across 5 branches, it checks 20 random pairs in 100 pulses and misses 6 real duplicates. The problem isn't the agent — it's that 20 samples from a maintenance timer can't cover the space. A Termite that walks continuously between pulses would accumulate far more coverage.
 
-2. **Wasted work.** Every maintenance cycle runs all agents regardless of need. At pulse 10 with 8 nodes, the Synthesizer scans for duplicates that can't exist yet. At pulse 90 with 73 nodes and zero conflict, the Resolver still checks. Clock-triggered beats condition-triggered in simplicity but loses in efficiency.
+2. **Wasted work.** Every maintenance cycle runs all agents regardless of need. At pulse 10 with 8 nodes, the Synthesizer scans for duplicates that can't exist yet. At pulse 90 with 73 nodes and zero conflict, the Resolver still checks. Clock-triggered beats condition-triggered in simplicity but loses in efficiency. *Caveat: this overstates the problem slightly. Heuristic agents (Scout, Grazer) are O(n) filesystem scans, not LLM calls — cheap to run on nothing. The LLM agents (Resolver, Verifier) already have internal guards (Resolver checks for conflict > 0, Verifier checks for stable-looking nodes). The real waste is in the scheduling overhead, not wasted API calls.*
 
 3. **Phase transitions are imposed, not detected.** Colony phases (germination → foraging → brood-care → crystallization) are derived from aggregate confidence thresholds. This is observation, which is fine. But the *response* to phases is encoded in FlashSpore's system prompt — "you are in brood-care, prefer UPDATE over DECOMPOSE." The phase doesn't emerge from organism behavior; it's announced by a narrator. In a real colony, workers shift behavior because the environmental signals change, not because someone told them the season changed.
 
@@ -80,10 +80,12 @@ interface TermiteMemoryEntry {
 ```
 
 **Key properties:**
-- **Sparse.** The memory holds at most ~30 entries. Not the whole tree. Just what the Termite has personally visited.
-- **Summarized.** Each entry is a 15-word LLM-generated summary, not the full node content. This keeps the prompt compact — 30 entries ≈ 400-500 tokens.
+- **Sparse.** The memory holds at most ~30 entries. Not the whole tree. Just what the Termite has personally visited. *Note: "sparse" is relative — 30 entries in a 73-node tree is 40% coverage, which is dense. In a 300-node tree it's 10%, which is genuinely sparse. The fixed cap means coverage percentage drops as the tree grows. Consider: should `maxEntries` scale with tree size (e.g., `min(30, total_nodes * 0.15)`)? Needs experimentation.*
+- **Summarized.** Each entry is a 15-word LLM-generated summary, not the full node content. This keeps the prompt compact — 30 entries ≈ 400-500 tokens. *Risk: summary compression may lose the signal needed for accurate equivalence detection. "Persists user session token to localStorage" vs "Manages user authentication state" — are these duplicates? Full node content (which v1 uses) gives the LLM more to work with per comparison. The tradeoff is volume vs accuracy-per-comparison. Net effective comparison rate (accuracy × volume) is probably 5-10x v1, not 20-30x. Must validate empirically.*
 - **Decaying.** Entries older than N pulses are forgotten. The Termite's mental map evaporates, just like pheromone trails. If a node was important, the Termite will revisit it eventually and re-form the memory.
 - **Cross-branch aware.** Each entry records which branch it came from. The Termite preferentially compares new nodes against memories from *other* branches.
+
+**Staleness risk:** Memories describe nodes as they were when visited. If the Grazer prunes a node, or FlashSpore rewrites its content, the memory is stale. The Termite might flag an overlap with a node that no longer exists or whose content has changed. Mitigation: before raising conflict, verify the target node still exists and the memory summary still roughly matches. This adds a filesystem check per overlap (cheap) but prevents ghost conflicts.
 
 ### Walk Pattern
 
@@ -93,10 +95,12 @@ Each time the Termite acts, it takes several steps through the tree:
 jump → wander → wander → jump → wander → wander
 ```
 
-- **Jump**: Move to a random node in a different branch from the current position. Weighted toward low-confidence (recently created) nodes. Ensures cross-branch coverage.
+- **Jump**: Move to a random node in a different branch from the current position. Weighted toward low-confidence (recently created) nodes. Ensures cross-branch coverage. *Note: confidence-weighting biases toward new shallow nodes. Deep high-confidence leaves are practically invisible to jumps — they can only be reached by wandering, which is breadth-biased (siblings/children, not parents).*
 - **Wander**: Move to a sibling or child of the current position. Explores the local neighborhood. Builds contextual understanding of a branch before jumping away.
 
 This alternation means the Termite sees both breadth (jumps across branches) and depth (wanders within a branch), accumulating memory from both.
+
+*The jump:wander ratio of 1:2 is ad hoc. Why not 1:1 or 1:3? This needs tuning data. Also, wandering to siblings/children creates breadth-first bias — the Termite explores laterally within a branch rather than descending into it. A "descend" movement type (move to a child, preferring the lowest-confidence child) might improve depth coverage.*
 
 ### The Walk Call
 
@@ -132,7 +136,9 @@ The LLM returns:
 }
 ```
 
-**Value per call:** Instead of comparing 1 pair, each call compares 1 node against 20-30 remembered nodes. The cost is the same (~500-700 tokens) but the coverage is 20-30x higher. At $0.00007 per call, 6 steps per maintenance cycle = $0.0004 per cycle for 120-180 effective comparisons.
+**Value per call:** Instead of comparing 1 pair, each call compares 1 node against 20-30 remembered nodes. The *effective* coverage improvement depends on summary accuracy — if summaries preserve enough signal for the LLM to detect equivalence, this is 20-30x more comparisons per call. Realistically, compressed summaries will miss some equivalences that full content would catch, so **expect 5-10x effective improvement until validated.**
+
+**Honest cost per call:** 30 memory entries × ~15 words ≈ 450 tokens + node content ~200 tokens + system prompt ~200 tokens ≈ **850 tokens input**, not the ~500 claimed by a naive estimate. This grows as memory fills — an empty memory is ~400 tokens, a full memory is ~850. At $0.10/1M input tokens, a full-memory call costs ~$0.00009 (still cheap, but 30% more than v1's ~$0.00007). 6 steps per maintenance cycle ≈ $0.0005 per cycle.
 
 ### Memory Evaporation
 
@@ -154,6 +160,8 @@ forget(currentPulse: number): void {
 ```
 
 The `maxAge` controls how far back the Termite remembers. Too long and the memory fills with stale entries from a tree that has evolved. Too short and the Termite can't accumulate enough cross-branch context. Default: ~50 pulses (5 maintenance cycles worth of memory at current 10-pulse intervals, but this decouples naturally when we move to async).
+
+**Walk frequency vs growth rate:** At 6 steps per maintenance cycle (every 10 pulses), the Termite visits 0.6 nodes per pulse. The tree grows at 2-3 nodes per pulse. The Termite permanently falls behind — its memory samples from an ever-growing tree with declining coverage percentage. This is acceptable if the goal is patrol, not census. But it means cross-branch duplicates created between maintenance cycles can only be detected if the Termite happens to jump to one of them. More steps per cycle or more frequent activation (Step 2) helps, but the fundamental rate mismatch should be acknowledged: the Termite will never see every node.
 
 ### Conflict Raising
 
@@ -226,6 +234,8 @@ while (pulses < max_pulses):
 - Signal conditions are sufficient to trigger appropriate maintenance
 - The maintenance cycle naturally adapts to tree state
 
+**Honest assessment:** This is still synchronous polling, not truly event-driven. The loop `for each organism: if organism.shouldActivate(stats)` checks every organism every pulse. The improvement is real — agents skip when not needed — but it's variable-interval polling, not an architectural shift to async. Also, computing `TreeStats` every pulse requires an O(n) tree scan. Currently this scan only happens every 10 pulses. If stats computation is expensive on large trees (500+ nodes), the per-pulse overhead may negate the savings from skipping unnecessary agents. Consider: cache stats and invalidate on mutation, rather than recomputing every pulse.
+
 ### Step 3: Interleaved Execution
 
 **Concept:** Maintenance organisms don't run as a batch after N pulses. They run *alongside* FlashSpore pulses, interleaved in the work queue.
@@ -262,6 +272,15 @@ Setting `resolver: 0` means conflicts only resolve through evaporation and Flash
 - Population ratios are a meaningful tuning lever
 - Growth and maintenance happen concurrently, not sequentially
 
+**Critical risk — mutation ordering becomes non-deterministic.** In the current model, all growth happens (pulses 1-10), then all maintenance — deterministic ordering within each batch. With interleaved workers, mutation order depends on which worker finishes first. Concrete failure modes:
+- A Termite raises conflict on a node that FlashSpore is currently mutating → wasted pulse, or worse, the conflict gets immediately overwritten
+- A Grazer prunes a node that FlashSpore selected as its target → FlashSpore's mutation fails on a missing node
+- Two FlashSpore workers target sibling nodes, one decomposes while the other settles the parent → parent signals become inconsistent
+
+The MutationDispatcher serializes mutations, but the *selection* of targets is not serialized. Workers choose their targets from a tree snapshot that may be stale by the time their mutation dispatches. This isn't a bug — it's a fundamental property of concurrent systems. But it means runs become non-reproducible and debugging requires understanding interleaved execution traces. The replay system (designed for sequential event streams) will need significant redesign.
+
+**Worker pool vs API concurrency:** The worker ratio is bounded by LLM API concurrency, not by configuration. If we have 4 concurrent API slots and 6 configured workers, workers queue anyway. The ratio matters less than the total budget. Consider framing this as "attention budget" (total concurrent slots) with proportional allocation, not as discrete worker counts.
+
 ### Step 4: Emergent Phase Behavior
 
 **Concept:** Remove explicit phase detection from the simulation loop. Instead, each organism responds to signal gradients directly.
@@ -275,7 +294,11 @@ In the async model, FlashSpore's behavior shifts because the *signals it encount
 
 Phase labels become *observations about aggregate signal state*, not *instructions that change behavior*. The dashboard can still display "this tree is in brood-care" as a diagnostic label. But no agent reads that label to decide what to do.
 
-**The test:** Run the same goal with and without phase guidance in the system prompt. If the signal-only version converges comparably, the explicit phase guidance is training wheels that can come off.
+**This step directly contradicts validated experiment results.** The 11-experiment tuning campaign proved that explicit phase guidance improves outcomes: brood-care SETTLE boost raised UPDATE mutations from 37% to 53%. Removing phase guidance reverts a validated improvement.
+
+The core problem: FlashSpore doesn't inherently know that `confidence=7` means "stop decomposing." That mapping is encoded in the phase-guided prompt. Without it, the LLM sees a node with `need=4, confidence=7` and might still decompose it — nothing in the raw signal values says "this is settled, refine only." The signals *inform* the phase label, but the phase label *translates* signals into behavioral guidance the LLM can follow.
+
+**The honest test:** Run the same goal with and without phase guidance. This is proposed as validation but should be flagged as a **known risk** — we already have data showing guidance helps. The question is whether signal-only behavior can match it with better prompt engineering (e.g., explicitly teaching FlashSpore signal semantics: "confidence above 6 means the content is mature — prefer UPDATE or SETTLE over DECOMPOSE"). This is a different prompt, not the absence of a prompt. Emergent phase behavior may require more explicit signal education, not less prompt guidance.
 
 ---
 
@@ -293,11 +316,13 @@ A Termite that finds 3 overlaps in its last walk has high spawn pressure — may
 
 This is genuinely emergent population dynamics. The "number of each organism" isn't configured — it's an output of the ecology. The only configured input is the total work pool size (how much compute budget is available).
 
-**Not yet designed.** This requires careful thought about:
-- How spawn pressure is calculated (rolling average? recent only?)
+**Not yet designed.** This requires careful thought about known hard problems:
+
+- **Spawn pressure is circular.** `results_per_activation / cost_per_activation` assumes "results" are measurable and comparable across agent types. What counts as a "result" for the Scout (flagging problems) vs the Termite (finding overlaps) vs the Grazer (pruning)? These are qualitatively different. Worse: a Scout that correctly finds zero problems in a healthy tree has zero results. Despawning it punishes correct behavior. The formula must distinguish "nothing to find" from "failed to find."
+- **Predator-prey oscillation.** Resolver spawns because conflict is high → resolves conflicts → gets despawned because results drop to zero → conflicts return because no Resolver → Resolver respawns. This is a classic Lotka-Volterra oscillation, a known hard problem in ecology and control theory. Dampening mechanisms (minimum population floors, hysteresis thresholds, rolling averages) are required but add complexity that erodes the "emergent" claim.
 - How organisms are despawned (graceful? immediate?)
 - Whether organisms can specialize (a Termite that patrols auth branches vs one that patrols UI branches)
-- Stability — does the population oscillate or converge?
+- Stability guarantees — without them, population dynamics may be fun to watch but unreliable for production use
 
 ---
 
@@ -438,14 +463,66 @@ New event type for organism activation decisions:
 
 ---
 
+## Validation Criteria and Rollback Thresholds
+
+Each step must be validated before proceeding to the next. If a step fails validation, revert it — the current phasic system is well-tested (188 tests, 11-experiment validation campaign) and should not be degraded for architectural aesthetics.
+
+### Step 1: Termite Walking Memory
+
+**Success criteria:**
+- Walking Termite detects at least as many cross-branch duplicates as v1 on the same 100-pulse todo app run (baseline: 0/20 — low bar, but v1 set it)
+- Run the same goal 3 times: walking Termite should detect duplicates in at least 2/3 runs (statistical coverage)
+- Memory evaporation doesn't cause memory to empty out before cross-branch context accumulates (check memory_size in telemetry stays above 10 after pulse 30)
+- No false positives from stale memories (ghost conflicts on pruned nodes)
+
+**Rollback trigger:** If summary compression causes >50% of detected overlaps to be false positives (verified by manual inspection), revert to v1's full-content comparison and reconsider the memory design.
+
+### Step 2: Signal-Gated Activation
+
+**Success criteria:**
+- Same convergence quality as phasic model (avg confidence, stable count, total pulses to converge) within 10% on 3 repeated runs
+- Total LLM calls reduced (agents should skip when not needed)
+- No agent starves (every agent activates at least once per 50 pulses on a tree that needs it)
+
+**Rollback trigger:** If convergence quality degrades by >15% (measured by avg confidence at pulse 100 and stable node count), revert to fixed-interval maintenance.
+
+### Step 3: Interleaved Execution
+
+**Success criteria:**
+- Convergence quality matches Step 2 within 10%
+- No mutation failures from stale target selection (FlashSpore targeting a pruned node, etc.)
+- Replay system can reconstruct causality from interleaved events
+
+**Rollback trigger:** If mutation failure rate exceeds 5% (mutations that fail because the target was modified by another worker), the concurrency model needs redesign. If replay becomes uninterpretable, the debugging cost outweighs the architectural benefit.
+
+### Step 4: Emergent Phase Behavior
+
+**Success criteria:**
+- Signal-only FlashSpore converges as well as phase-guided FlashSpore on 5 repeated goals
+- UPDATE mutation rate in late-stage trees stays above 45% (current phase-guided rate is 53%)
+- Trees don't regress to over-decomposition in brood-care equivalent conditions
+
+**Rollback trigger:** If UPDATE rate drops below 35% (the pre-tuning baseline), phase guidance is load-bearing and cannot be removed without a fundamentally different approach to signal education.
+
+### Debugging the Async Model
+
+The current telemetry produces a clean sequential narrative: 10 pulses, maintenance block, 10 pulses. With interleaved execution, the timeline becomes a jumble of mixed events from simultaneous workers. Answering "why did this node get pruned?" requires correlating events across concurrent workers.
+
+Before Step 3, the replay system must be extended with:
+- **Causal chains**: link each mutation to the worker that produced it and the tree snapshot it read
+- **Worker lanes**: display parallel workers as swim lanes, not a single timeline
+- **Conflict visualization**: highlight when two workers targeted the same node or overlapping subtrees
+
+---
+
 ## Summary
 
-The Termite's walking memory is the entry point to a broader architectural shift: from centrally scheduled maintenance batches to independently activated organisms with decaying state. Each step of the transition is independently valuable:
+The Termite's walking memory is the entry point to a broader architectural shift: from centrally scheduled maintenance batches to independently activated organisms with decaying state. Each step of the transition is independently valuable — and each step has real risks that must be validated before proceeding:
 
-1. **Termite walking memory** — 20-30x more comparisons per LLM call, catches duplicates that random sampling misses
-2. **Signal-gated activation** — agents run when needed, not on a timer
-3. **Interleaved execution** — growth and maintenance happen concurrently
-4. **Emergent phases** — remove explicit phase guidance, let signals drive behavior
-5. **Population dynamics** — organism counts respond to environmental pressure
+1. **Termite walking memory** — estimated 5-10x more effective comparisons per LLM call (pending empirical validation of summary accuracy), catches duplicates that random sampling misses. Low risk, high confidence.
+2. **Signal-gated activation** — agents run when needed, not on a timer. Moderate risk: O(n) stats computation per pulse, still polling not truly async.
+3. **Interleaved execution** — growth and maintenance happen concurrently. High risk: non-deterministic mutation ordering, race conditions on target selection, replay system redesign required.
+4. **Emergent phases** — remove explicit phase guidance, let signals drive behavior. High risk: contradicts validated experiment results. May require "signal education" prompts rather than removal of guidance. Needs careful A/B testing.
+5. **Population dynamics** — organism counts respond to environmental pressure. Speculative: spawn pressure formula is circular, predator-prey oscillation is a known hard problem. Interesting to explore but far from production-ready.
 
-The biological metaphor isn't just vocabulary anymore. It's the architecture.
+The biological metaphor isn't just vocabulary anymore. It's the architecture. But biological systems took millions of years to stabilize. We're building this in weeks. Each step should be validated against the phasic baseline before the next step begins — the current system works, and working beats elegant.
