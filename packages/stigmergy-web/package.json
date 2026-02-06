@@ -1,0 +1,40 @@
+{
+  "name": "@hierophage/stigmergy-web",
+  "version": "0.1.0",
+  "description": "Local dashboard and showcase app for the stigmergy engine",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"tsx watch src/server/index.ts\" \"vite\"",
+    "build": "vite build && tsc -p tsconfig.server.json",
+    "preview": "node dist/server/index.js",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit"
+  },
+  "dependencies": {
+    "@hierophage/stigmergy": "*",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "chokidar": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/d3": "^7.4.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "d3": "^7.9.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.2.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.3.3",
+    "vite": "^6.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
