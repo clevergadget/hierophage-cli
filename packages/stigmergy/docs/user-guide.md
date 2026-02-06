@@ -71,6 +71,7 @@ The tree transitions through phases based on aggregate confidence:
 - Decides whether to decompose (create children) or deepen (improve content)
 - Adjusts signals based on what it did
 - Phase-aware: more aggressive decomposition in early phases, more refinement later
+- Depth-aware: at depth >= 6, receives persuasive guidance to settle rather than decompose further (prevents gravity wells)
 
 **When it runs:** Every pulse, on the highest-priority target
 
@@ -152,7 +153,7 @@ The tree transitions through phases based on aggregate confidence:
 - Generates synthesized content combining both
 - Uses MERGE_NODES mutation (atomic: update target, delete sources)
 
-**When it runs:** Every 30 pulses
+**When it runs:** Every 10 pulses (maintenance cycle)
 
 **Important:** Explicitly told what NOT to merge (Create/Delete/Update are different operations)
 
@@ -166,7 +167,7 @@ The tree transitions through phases based on aggregate confidence:
 - MERGE raises conflict on both nodes for resolution
 - LINK is informational only (no mutations)
 
-**When it runs:** Every 30 pulses
+**When it runs:** Every 10 pulses (maintenance cycle)
 
 **What it sees:** Full node content for accurate semantic comparison
 
@@ -324,16 +325,10 @@ while (pulses < max_pulses):
 Sequential steps:
 
 1. **Verifier stability check** — Verify up to 3 "stable-looking" leaf nodes
-2. **Parent signal propagation** — If all children settled, reduce parent need
-3. **Verifier coverage check** — Before propagation, verify children cover parent
-4. **Scout patrol** — Detect and flag hollow nodes, tautologies
-5. **Grazer patrol** — Prune dead nodes (untouched 50+ pulses)
-6. **Resolver** — Resolve conflicts if triggered (see triggers below)
-
-### Extended Maintenance (Every 30 Pulses)
-
-Additional steps at 30-pulse intervals:
-
+2. **Parent signal propagation** — If all children settled, reduce parent need (includes coverage verification — children must cover parent scope or propagation is blocked and conflict raised)
+3. **Scout patrol** — Detect and flag hollow nodes, tautologies
+4. **Grazer patrol** — Prune dead nodes (untouched 10+ pulses)
+5. **Resolver** — Resolve conflicts if triggered (see triggers below)
 6. **Weaver** — Detect cross-branch semantic overlaps
 7. **Synthesizer** — Merge stable sibling duplicates
 

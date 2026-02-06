@@ -49,9 +49,13 @@ export class MockSpore implements Agent {
   async run(target: StigNode, _context: string, children: StigNode[], _colony?: ColonyContext): Promise<AgentResult> {
     const mutations: Mutation[] = [];
     const depth = getDepth(target.path);
+    let action: string;
+    let reasoning: string;
 
     if (target.signals.need <= 3 || (children.length > 0 && target.signals.confidence >= 3)) {
       // SETTLE: low need or already-decomposed with some review → stabilize
+      action = 'SETTLE';
+      reasoning = 'Low need or children already have confidence — settling node';
       mutations.push(
         createMutation('UPDATE_SIGNALS', target.path, {
           signals: { confidence: 9, need: 1 },
@@ -59,6 +63,8 @@ export class MockSpore implements Agent {
       );
     } else if (children.length === 0 && target.signals.confidence < 5 && depth < MAX_DEPTH) {
       // DECOMPOSE: leaf node that needs work → create children
+      action = 'DECOMPOSE';
+      reasoning = `Leaf node at depth ${depth} with low confidence — decomposing into children`;
       const childNames = getChildNames(target.name);
       const childNeed = Math.max(3, target.signals.need - 1);
 
@@ -81,6 +87,8 @@ export class MockSpore implements Agent {
       );
     } else {
       // REVIEW: has children or at max depth, increase confidence
+      action = 'REVIEW';
+      reasoning = 'Has children or at max depth — reviewing and bumping confidence';
       mutations.push(
         createMutation('UPDATE_SIGNALS', target.path, {
           signals: {
@@ -94,6 +102,8 @@ export class MockSpore implements Agent {
     return {
       mutations,
       cost: { api_calls: 0, input_tokens: 0, output_tokens: 0 },
+      action,
+      reasoning,
     };
   }
 }

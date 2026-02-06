@@ -18,6 +18,8 @@ export interface AgentResult {
   mutations: Mutation[];
   cost: AgentCost;
   error?: string;
+  action?: string; // Agent's chosen action (DECOMPOSE, REVIEW, UPDATE_CONTENT, SETTLE)
+  reasoning?: string; // Agent's stated reasoning for the action
 }
 
 /**

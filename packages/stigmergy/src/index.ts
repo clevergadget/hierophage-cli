@@ -10,6 +10,10 @@ export type {
   BudgetConfig,
   WorkspaceConfig,
   TreeStats,
+  CostSummary,
+  TelemetryEvent,
+  TerminationReason,
+  ColonyPhase,
 } from './types.js';
 
 export {
@@ -24,7 +28,7 @@ export {
 export { parseNode, parseNodeContent, serializeNode, readNode, writeNode, listChildren, nodeExists } from './tree/node.js';
 export { buildContextChain, assembleContext, buildFullContext } from './tree/context-chain.js';
 export { scanTree, findHighestPriority, getTreeStats, getColonyPhase, buildPhaseGuidance, selectNHighestPriority } from './tree/scanner.js';
-export type { ColonyPhase } from './tree/scanner.js';
+// ColonyPhase now exported from types.js above
 
 // Dispatch
 export { MutationDispatcher } from './dispatch/dispatcher.js';
@@ -51,7 +55,9 @@ export type { SpecialConcern, GoalAnalysis } from './agents/goal-analyst.js';
 
 // Simulation
 export { pulse, run, batchPulse } from './simulation/pulse.js';
-export type { PulseResult, RunResult, TerminationReason } from './simulation/pulse.js';
+export { TelemetryEmitter, parseTelemetryLog } from './simulation/telemetry.js';
+export type { PulseResult, RunResult } from './simulation/pulse.js';
+// TerminationReason now exported from types.js above
 
 // Crystallizer
 export { Crystallizer } from './crystal/crystallizer.js';

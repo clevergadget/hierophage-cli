@@ -325,7 +325,7 @@ export class FlashSpore implements Agent {
       const parsed: FlashResponse = JSON.parse(text);
       const mutations = responseToMutations(parsed, target);
 
-      return { mutations, cost };
+      return { mutations, cost, action: parsed.action, reasoning: parsed.reasoning };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { mutations: [], cost: zeroCost, error: msg };

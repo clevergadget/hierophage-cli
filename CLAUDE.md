@@ -6,6 +6,30 @@ Hierophage-CLI is a fork of [gemini-cli](https://github.com/google-gemini/gemini
 
 The core CLI functionality remains gemini-cli. What we're building lives in the prompt stack, the profile system, and the persistent state layer.
 
+## Stigmergy Engine API Capacity
+
+The Stigmergy engine uses Gemini Flash Lite with absurd headroom:
+- **RPM**: 4,000 requests per minute
+- **TPM**: 4,000,000 tokens per minute
+- **RPD**: Unlimited
+
+**Pricing (Gemini 2.5 Flash Lite):**
+- Input: $0.10 per 1M tokens
+- Output: $0.40 per 1M tokens
+- Context caching: $0.01 per 1M tokens (+ $1.00/1M tokens/hour storage)
+
+**Cost examples:**
+- 200 pulses, 318k input + 76k output = ~$0.06
+- 1000 pulses ≈ $0.30
+
+This changes everything. LLM calls are not a scarce resource to be conserved — they're abundant like CPU cycles. Design decisions should assume:
+- Parallel agents are cheap (run 8, 16, 32 concurrent)
+- Context can be generous (pass full conflict reasons, full parent chains)
+- Retry freely (if one approach fails, try another)
+- Let agents be verbose (output tokens are nearly free at $0.40/1M)
+
+Historical training data treats API calls as precious. That's outdated for this project.
+
 ## The Philosophical Foundation
 
 Read `docs/foundation.md` for the full document. Key premises:

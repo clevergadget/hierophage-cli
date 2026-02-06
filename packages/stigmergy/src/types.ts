@@ -115,6 +115,34 @@ export const DEFAULT_BUDGET: BudgetConfig = {
   node_temperature_limit: 5,
 };
 
+// --- Telemetry Types ---
+
+export interface CostSummary {
+  api_calls: number;
+  input_tokens: number;
+  output_tokens: number;
+}
+
+export type TelemetryEvent =
+  | { type: 'run_start'; timestamp: string; pulse: number; goal: string; model: string; max_pulses: number; parallel: number }
+  | { type: 'run_end'; timestamp: string; pulse: number; reason: TerminationReason; detail?: string; stats: TreeStats; cost: CostSummary }
+  | { type: 'pulse'; timestamp: string; pulse: number; target: string; agent: string; action: string; reasoning?: string;
+      mutations_attempted: number; mutations_succeeded: number; skipped_overheated: number;
+      cost: CostSummary; phase: ColonyPhase; stats: TreeStats }
+  | { type: 'phase_change'; timestamp: string; pulse: number; from: ColonyPhase; to: ColonyPhase; stats: TreeStats }
+  | { type: 'scout'; timestamp: string; pulse: number; findings: { hollow: string[]; tautologies: string[]; similar: string[] }; fixes: number }
+  | { type: 'grazer'; timestamp: string; pulse: number; pruned: string[] }
+  | { type: 'verifier_stability'; timestamp: string; pulse: number; node: string; passed: boolean; reason?: string }
+  | { type: 'verifier_coverage'; timestamp: string; pulse: number; node: string; passed: boolean; gaps?: string[] }
+  | { type: 'propagation'; timestamp: string; pulse: number; node: string; need_delta: number; confidence_delta: number }
+  | { type: 'resolver'; timestamp: string; pulse: number; node: string; resolved: boolean; conflict_before: number; conflict_after: number }
+  | { type: 'synthesizer'; timestamp: string; pulse: number; target: string; sources: string[]; merged: boolean }
+  | { type: 'weaver'; timestamp: string; pulse: number; nodes: string[]; recommendation: string; reason: string };
+
+export type TerminationReason = 'stable' | 'max_pulses' | 'no_target' | 'budget_exceeded';
+
+export type ColonyPhase = 'germination' | 'foraging' | 'brood-care' | 'crystallization';
+
 export const DEFAULT_CONFIG: WorkspaceConfig = {
   model: 'gemini-2.5-flash-lite',
   max_concurrent_workers: 8,

@@ -1,13 +1,10 @@
 import { readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readNode, nodeExists } from './node.js';
-import type { StigNode, TreeStats } from '../types.js';
+import type { StigNode, TreeStats, ColonyPhase } from '../types.js';
 
-/**
- * Colony phases based on stigmergic lifecycle.
- * Determined by quorum sensing (aggregate confidence level).
- */
-export type ColonyPhase = 'germination' | 'foraging' | 'brood-care' | 'crystallization';
+// Re-export ColonyPhase from types for backwards compatibility
+export type { ColonyPhase } from '../types.js';
 
 /**
  * Determine colony phase from tree statistics.

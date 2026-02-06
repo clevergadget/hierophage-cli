@@ -21,6 +21,7 @@ import { resolverCommand } from './resolver-cmd.js';
 import { verifyCommand } from './verify-cmd.js';
 import { synthesizeCommand } from './synthesize-cmd.js';
 import { weaveCommand } from './weave-cmd.js';
+import { replayCommand } from './replay-cmd.js';
 
 // Load .env.local from package root if it exists (overrides shell env)
 // CLI runs from dist/src/cli/, so go up 3 levels to reach package root
@@ -375,6 +376,37 @@ yargs(hideBin(process.argv))
     async (argv) => {
       await weaveCommand(getStigRoot(argv), {
         apply: argv.apply as boolean,
+      });
+    },
+  )
+  .command(
+    'replay',
+    'Replay a run from telemetry (timeline, node history, maintenance)',
+    (y) =>
+      y
+        .option('node', {
+          type: 'string',
+          describe: 'Show history for a specific node path',
+        })
+        .option('pulse', {
+          type: 'number',
+          describe: 'Show detail for a specific pulse number',
+        })
+        .option('maintenance', {
+          type: 'boolean',
+          describe: 'Show only maintenance/ecology events',
+          default: false,
+        })
+        .option('agent', {
+          type: 'string',
+          describe: 'Filter events by agent name',
+        }),
+    (argv) => {
+      replayCommand(getStigRoot(argv), {
+        node: argv.node as string | undefined,
+        pulse: argv.pulse as number | undefined,
+        maintenance: argv.maintenance as boolean,
+        agent: argv.agent as string | undefined,
       });
     },
   )

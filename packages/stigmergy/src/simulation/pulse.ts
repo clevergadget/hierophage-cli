@@ -11,16 +11,18 @@ import { Resolver } from '../agents/resolver.js';
 import { Synthesizer } from '../agents/synthesizer.js';
 import { Weaver } from '../agents/weaver.js';
 import { createMutation } from '../dispatch/mutations.js';
+import { TelemetryEmitter } from './telemetry.js';
 import type { Agent } from '../agents/agent.js';
 import type { BudgetSnapshot } from '../budget/tracker.js';
-import type { MutationResult, WorkspaceConfig, TreeStats, StigNode } from '../types.js';
-import type { ColonyPhase } from '../tree/scanner.js';
+import type { MutationResult, WorkspaceConfig, TreeStats, StigNode, TerminationReason, ColonyPhase } from '../types.js';
 
 export interface PulseResult {
   pulse_number: number;
   target_path: string;
   target_name: string;
   agent: string;
+  action?: string;
+  reasoning?: string;
   mutations_attempted: number;
   mutations_succeeded: number;
   skipped_overheated: number;
@@ -28,13 +30,10 @@ export interface PulseResult {
   agent_error?: string;
   cost: { api_calls: number; input_tokens: number; output_tokens: number };
   stats_after: TreeStats;
+  phase: ColonyPhase;
 }
 
-export type TerminationReason =
-  | 'stable'
-  | 'max_pulses'
-  | 'no_target'
-  | 'budget_exceeded';
+export type { TerminationReason } from '../types.js';
 
 export interface RunResult {
   pulses: PulseResult[];
@@ -185,6 +184,8 @@ export async function pulse(
     target_path: target.path,
     target_name: target.name,
     agent: agent.name,
+    action: agentResult.action,
+    reasoning: agentResult.reasoning,
     mutations_attempted: agentResult.mutations.length,
     mutations_succeeded: succeeded,
     skipped_overheated: skippedOverheated,
@@ -192,6 +193,7 @@ export async function pulse(
     agent_error: agentResult.error,
     cost: agentResult.cost,
     stats_after: statsAfter,
+    phase,
   };
 }
 
@@ -215,10 +217,13 @@ async function propagateParentSignals(
   dispatcher: MutationDispatcher,
   verifier: Verifier | null,
   nodeMap: Map<string, StigNode>,
+  telemetry?: TelemetryEmitter,
+  currentPulse?: number,
 ): Promise<PropagationResult> {
   let propagated = 0;
   let coverageChecks = 0;
   let coverageFailures = 0;
+  const ts = () => new Date().toISOString();
 
   for (const node of nodes) {
     if (node.path === '.') continue; // Skip root for child check
@@ -245,6 +250,12 @@ async function propagateParentSignals(
         if (verifier) {
           coverageChecks++;
           const coverage = await verifier.assessCoverage(node, childNodes);
+
+          telemetry?.emit({
+            type: 'verifier_coverage', timestamp: ts(), pulse: currentPulse ?? 0,
+            node: node.path, passed: coverage.is_covered, gaps: coverage.gaps,
+          });
+
           if (!coverage.is_covered && !coverage.error) {
             coverageFailures++;
             // Coverage failed - raise conflict on parent to attract attention
@@ -264,7 +275,15 @@ async function propagateParentSignals(
         if (shouldBumpConfidence) newSignals.confidence = Math.min(8, node.signals.confidence + 1);
 
         const result = dispatcher.dispatch(createMutation('UPDATE_SIGNALS', node.path, { signals: newSignals }));
-        if (result.success) propagated++;
+        if (result.success) {
+          propagated++;
+          telemetry?.emit({
+            type: 'propagation', timestamp: ts(), pulse: currentPulse ?? 0,
+            node: node.path,
+            need_delta: newSignals.need !== undefined ? newSignals.need - node.signals.need : 0,
+            confidence_delta: newSignals.confidence !== undefined ? newSignals.confidence - node.signals.confidence : 0,
+          });
+        }
       }
     }
   }
@@ -288,6 +307,10 @@ export async function run(
   const workspacePath = join(stigRoot, 'workspace');
   const tracker = new BudgetTracker(stigRoot, config.budget);
   tracker.initLog();
+
+  // Initialize telemetry
+  const telemetry = new TelemetryEmitter(stigRoot);
+  const ts = () => new Date().toISOString();
 
   const pulses: PulseResult[] = [];
   const grazer = new Grazer();
@@ -315,27 +338,49 @@ export async function run(
   // Track phase for crystallization gate
   let lastPhase: ColonyPhase = 'germination';
 
-  const makeResult = (reason: TerminationReason, detail?: string): RunResult => ({
-    pulses,
-    terminated_reason: reason,
-    termination_detail: detail,
-    total_pulses: pulses.length,
-    final_stats: getTreeStats(scanTree(workspacePath)),
-    budget: tracker.snapshot(),
-    pruned_nodes: prunedNodes,
-    scout_fixes: scoutFixes,
-    propagations,
-    stability_checks: stabilityChecks,
-    stability_failures: stabilityFailures,
-    coverage_checks: coverageChecks,
-    coverage_failures: coverageFailures,
-    resolver_attempts: resolverAttempts,
-    resolver_resolutions: resolverResolutions,
-    synthesis_merges: synthesisMerges,
-    weaver_overlaps: weaverOverlaps,
+  // Read root node for goal
+  const rootNode = readNode(workspacePath, '.');
+  const parallelCount = config.max_concurrent_workers || 1;
+
+  // Emit run_start
+  telemetry.emit({
+    type: 'run_start', timestamp: ts(), pulse: 0,
+    goal: rootNode.name || rootNode.content.split('\n')[0] || 'unknown',
+    model: config.model, max_pulses: config.max_pulses, parallel: parallelCount,
   });
 
-  const parallelCount = config.max_concurrent_workers || 1;
+  const makeResult = (reason: TerminationReason, detail?: string): RunResult => {
+    const finalStats = getTreeStats(scanTree(workspacePath));
+    const budget = tracker.snapshot();
+
+    // Emit run_end
+    telemetry.emit({
+      type: 'run_end', timestamp: ts(), pulse: pulses.length,
+      reason, detail, stats: finalStats,
+      cost: { api_calls: budget.total_api_calls, input_tokens: budget.total_input_tokens, output_tokens: budget.total_output_tokens },
+    });
+
+    return {
+      pulses,
+      terminated_reason: reason,
+      termination_detail: detail,
+      total_pulses: pulses.length,
+      final_stats: finalStats,
+      budget,
+      pruned_nodes: prunedNodes,
+      scout_fixes: scoutFixes,
+      propagations,
+      stability_checks: stabilityChecks,
+      stability_failures: stabilityFailures,
+      coverage_checks: coverageChecks,
+      coverage_failures: coverageFailures,
+      resolver_attempts: resolverAttempts,
+      resolver_resolutions: resolverResolutions,
+      synthesis_merges: synthesisMerges,
+      weaver_overlaps: weaverOverlaps,
+    };
+  };
+
   let pulseNumber = 1;
 
   while (pulseNumber <= config.max_pulses) {
@@ -358,6 +403,29 @@ export async function run(
     }
 
     pulses.push(...batchResults);
+
+    // Emit pulse telemetry events + track phase changes
+    for (const p of batchResults) {
+      telemetry.emit({
+        type: 'pulse', timestamp: ts(), pulse: p.pulse_number,
+        target: p.target_path, agent: p.agent,
+        action: p.action ?? 'unknown', reasoning: p.reasoning,
+        mutations_attempted: p.mutations_attempted,
+        mutations_succeeded: p.mutations_succeeded,
+        skipped_overheated: p.skipped_overheated,
+        cost: p.cost, phase: p.phase, stats: p.stats_after,
+      });
+
+      // Detect phase changes
+      if (p.phase !== lastPhase) {
+        telemetry.emit({
+          type: 'phase_change', timestamp: ts(), pulse: p.pulse_number,
+          from: lastPhase, to: p.phase, stats: p.stats_after,
+        });
+        lastPhase = p.phase;
+      }
+    }
+
     pulseNumber += batchResults.length;
 
     // Maintenance cycle: run every N pulses (check if we crossed a maintenance boundary)
@@ -383,6 +451,13 @@ export async function run(
         for (const node of toVerify) {
           stabilityChecks++;
           const verification = await verifier.verifyStability(node);
+
+          telemetry.emit({
+            type: 'verifier_stability', timestamp: ts(), pulse: pulses.length,
+            node: node.path, passed: verification.is_implementable,
+            reason: verification.reasoning,
+          });
+
           if (!verification.is_implementable && !verification.error) {
             stabilityFailures++;
             // Knock it back: increase need, decrease confidence
@@ -399,23 +474,46 @@ export async function run(
       }
 
       // 2. Parent signal propagation with LLM coverage gate
-      const propResult = await propagateParentSignals(workspacePath, nodes, dispatcher, verifier, nodeMap);
+      const propResult = await propagateParentSignals(workspacePath, nodes, dispatcher, verifier, nodeMap, telemetry, pulses.length);
       propagations += propResult.propagated;
       coverageChecks += propResult.coverageChecks;
       coverageFailures += propResult.coverageFailures;
 
       // 3. Scout patrol (detect and flag problems)
       const scoutReport = scout.patrol(nodes);
+      let scoutFixesThisCycle = 0;
       for (const mutation of scoutReport.mutations) {
         const fixResult = dispatcher.dispatch(mutation);
-        if (fixResult.success) scoutFixes++;
+        if (fixResult.success) {
+          scoutFixes++;
+          scoutFixesThisCycle++;
+        }
       }
+      telemetry.emit({
+        type: 'scout', timestamp: ts(), pulse: pulses.length,
+        findings: {
+          hollow: scoutReport.hollowNodes,
+          tautologies: scoutReport.tautologies,
+          similar: scoutReport.similarSiblings.map(s => `${s.a} ~ ${s.b}`),
+        },
+        fixes: scoutFixesThisCycle,
+      });
 
       // 4. Necrophoresis: Grazer prunes dead nodes
       const grazerReport = grazer.patrol(nodes, workspacePath, pulses.length);
+      const prunedThisCycle: string[] = [];
       for (const mutation of grazerReport.mutations) {
         const pruneResult = dispatcher.dispatch(mutation);
-        if (pruneResult.success) prunedNodes++;
+        if (pruneResult.success) {
+          prunedNodes++;
+          prunedThisCycle.push(mutation.path);
+        }
+      }
+      if (prunedThisCycle.length > 0) {
+        telemetry.emit({
+          type: 'grazer', timestamp: ts(), pulse: pulses.length,
+          pruned: prunedThisCycle,
+        });
       }
 
       // 5. Auto-Resolver: resolve conflicts when conditions trigger
@@ -456,12 +554,20 @@ export async function run(
 
             const result = await resolver.resolve(node, siblings, parent?.content);
 
-            if (result.resolved && result.mutations.length > 0) {
+            const resolved = result.resolved && result.mutations.length > 0;
+            if (resolved) {
               for (const mutation of result.mutations) {
                 dispatcher.dispatch(mutation);
               }
               resolverResolutions++;
             }
+
+            telemetry.emit({
+              type: 'resolver', timestamp: ts(), pulse: pulses.length,
+              node: node.path, resolved,
+              conflict_before: node.signals.conflict,
+              conflict_after: resolved ? 0 : node.signals.conflict,
+            });
           }
         }
 
@@ -475,6 +581,14 @@ export async function run(
         for (const mutation of weaveResult.mutations) {
           dispatcher.dispatch(mutation);
         }
+        for (const overlap of weaveResult.overlaps) {
+          telemetry.emit({
+            type: 'weaver', timestamp: ts(), pulse: pulses.length,
+            nodes: [overlap.node_a, overlap.node_b],
+            recommendation: overlap.recommendation,
+            reason: overlap.reason,
+          });
+        }
         weaverOverlaps += weaveResult.overlaps.filter(o => o.recommendation !== 'keep_separate').length;
       }
 
@@ -486,6 +600,14 @@ export async function run(
         const synthResult = await synthesizer.synthesize(freshNodes, { maxGroups: 10 });
         for (const mutation of synthResult.mutations) {
           dispatcher.dispatch(mutation);
+        }
+        for (const group of synthResult.duplicateGroups) {
+          telemetry.emit({
+            type: 'synthesizer', timestamp: ts(), pulse: pulses.length,
+            target: group.canonical,
+            sources: group.paths.filter(p => p !== group.canonical),
+            merged: group.action === 'synthesized',
+          });
         }
         synthesisMerges += synthResult.duplicateGroups.filter(g => g.action === 'synthesized').length;
       }
