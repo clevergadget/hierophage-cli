@@ -108,9 +108,6 @@ function renderTimeline(events: TelemetryEvent[]): void {
   const propCount = events.filter(e => e.type === 'propagation').length;
   if (propCount > 0) summaryParts.push(`${propCount} propagations`);
 
-  const overlapCount = events.filter(e => e.type === 'flash_overlap').length;
-  if (overlapCount > 0) summaryParts.push(`${overlapCount} overlaps`);
-
   const evapCount = events.filter(e => e.type === 'evaporation').reduce((sum, e) => sum + (e.type === 'evaporation' ? e.nodes_affected : 0), 0);
   if (evapCount > 0) summaryParts.push(`${evapCount} evaporated`);
 
@@ -204,8 +201,6 @@ function formatMaintenanceEvent(event: TelemetryEvent): string {
       return event.merged
         ? chalk.hex('#9B59B6')(`Synthesizer: merged ${event.sources.join(', ')} → ${shortPath(event.target)}`)
         : chalk.dim(`Synthesizer: flagged ${event.sources.join(', ')} ~ ${shortPath(event.target)}`);
-    case 'flash_overlap':
-      return chalk.hex('#FFA500')(`Overlap: ${shortPath(event.target_path)} ~ ${shortPath(event.overlap_path)} (${event.reason})`);
     case 'evaporation':
       return chalk.hex('#8B7355')(`Evaporation: ${event.nodes_affected} nodes (need ${event.avg_need_delta.toFixed(2)}, conflict ${event.avg_conflict_delta.toFixed(2)})`);
     default:
@@ -214,7 +209,7 @@ function formatMaintenanceEvent(event: TelemetryEvent): string {
 }
 
 function getMaintenanceEventsInRange(events: TelemetryEvent[], startPulse: number, endPulse: number): TelemetryEvent[] {
-  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap', 'evaporation']);
+  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'evaporation']);
   return events.filter(e =>
     maintenanceTypes.has(e.type) &&
     e.pulse >= startPulse &&
@@ -279,7 +274,6 @@ function getNodesFromEvent(event: TelemetryEvent): string[] {
     case 'propagation': return [event.node];
     case 'resolver': return [event.node];
     case 'synthesizer': return [event.target, ...event.sources];
-    case 'flash_overlap': return [event.target_path, event.overlap_path];
     default: return [];
   }
 }
@@ -287,7 +281,7 @@ function getNodesFromEvent(event: TelemetryEvent): string[] {
 // --- Maintenance View ---
 
 function renderMaintenanceView(events: TelemetryEvent[]): void {
-  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap', 'evaporation']);
+  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'evaporation']);
   const maintenanceEvents = events.filter(e => maintenanceTypes.has(e.type));
 
   if (maintenanceEvents.length === 0) {
@@ -371,7 +365,6 @@ function renderAgentFilter(events: TelemetryEvent[], agentName: string): void {
     if (e.type === 'verifier_stability' || e.type === 'verifier_coverage') return agentName.toLowerCase() === 'verifier';
     if (e.type === 'resolver') return agentName.toLowerCase() === 'resolver';
     if (e.type === 'synthesizer') return agentName.toLowerCase() === 'synthesizer';
-    if (e.type === 'flash_overlap') return agentName.toLowerCase() === 'overlap' || agentName.toLowerCase() === 'flash_overlap';
     if (e.type === 'evaporation') return agentName.toLowerCase() === 'evaporation';
     return false;
   });

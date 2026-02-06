@@ -11,7 +11,7 @@ import { Resolver } from '../agents/resolver.js';
 import { Synthesizer } from '../agents/synthesizer.js';
 import { createMutation } from '../dispatch/mutations.js';
 import { TelemetryEmitter } from './telemetry.js';
-import type { Agent, OverlapReport } from '../agents/agent.js';
+import type { Agent } from '../agents/agent.js';
 import type { BudgetSnapshot } from '../budget/tracker.js';
 import type { MutationResult, WorkspaceConfig, TreeStats, StigNode, TerminationReason, ColonyPhase } from '../types.js';
 
@@ -30,7 +30,6 @@ export interface PulseResult {
   cost: { api_calls: number; input_tokens: number; output_tokens: number };
   stats_after: TreeStats;
   phase: ColonyPhase;
-  overlaps?: OverlapReport[];
 }
 
 export type { TerminationReason } from '../types.js';
@@ -52,7 +51,6 @@ export interface RunResult {
   resolver_attempts: number;
   resolver_resolutions: number;
   synthesis_merges: number;
-  flash_overlaps: number;
   evaporations: number;
 }
 
@@ -69,50 +67,6 @@ function isStable(config: WorkspaceConfig, workspacePath: string): boolean {
     target.signals.confidence >= config.stability_threshold.confidence_min &&
     target.signals.conflict <= config.stability_threshold.conflict_max
   );
-}
-
-/**
- * Build a lightweight branch map from the scanned nodes.
- * Groups nodes by top-level branch, rendering as indented name + path.
- * This is included in ColonyContext for FlashSpore's cross-branch overlap detection.
- *
- * Example output:
- *   state-management/
- *     reducer-logic (state-management/reducer-logic)
- *     local-storage (state-management/local-storage)
- *   persistence/
- *     local-storage (persistence/local-storage)
- */
-export function buildBranchMap(nodes: StigNode[]): string {
-  // Group non-root nodes by their top-level branch
-  const branches = new Map<string, StigNode[]>();
-
-  for (const node of nodes) {
-    if (node.path === '.') continue;
-    const topLevel = node.path.split('/')[0];
-    if (!branches.has(topLevel)) branches.set(topLevel, []);
-    branches.get(topLevel)!.push(node);
-  }
-
-  const lines: string[] = [];
-  for (const [branch, branchNodes] of branches) {
-    lines.push(`${branch}/`);
-    // Sort children by path for consistency
-    const sorted = branchNodes
-      .filter(n => n.path !== branch) // skip the branch root itself
-      .sort((a, b) => a.path.localeCompare(b.path));
-    for (const node of sorted) {
-      const indent = '  '.repeat(node.path.split('/').length - 1);
-      lines.push(`${indent}${node.name} (${node.path})`);
-    }
-    // Safety valve: cap at 200 lines for very large trees
-    if (lines.length >= 200) {
-      lines.push('... (truncated)');
-      break;
-    }
-  }
-
-  return lines.join('\n');
 }
 
 /**
@@ -155,10 +109,7 @@ export async function pulse(
     .filter(n => n.path !== '.' && !n.path.includes('/'))
     .map(n => n.name);
 
-  // Build branch map for cross-branch overlap detection
-  const branchMap = buildBranchMap(nodes);
-
-  const colony = { phase, stats, targetDepth, topLevelConcepts, branchMap };
+  const colony = { phase, stats, targetDepth, topLevelConcepts };
 
   // Get existing children for the agent
   const childPaths = listChildren(workspacePath, target.path);
@@ -242,7 +193,6 @@ export async function pulse(
     cost: agentResult.cost,
     stats_after: statsAfter,
     phase,
-    overlaps: agentResult.overlaps,
   };
 }
 
@@ -443,7 +393,6 @@ export async function run(
   let resolverAttempts = 0;
   let resolverResolutions = 0;
   let synthesisMerges = 0;
-  let flashOverlaps = 0;
   let evaporations = 0;
 
   // Initialize Verifier and Resolver if API key available
@@ -494,7 +443,6 @@ export async function run(
       resolver_attempts: resolverAttempts,
       resolver_resolutions: resolverResolutions,
       synthesis_merges: synthesisMerges,
-      flash_overlaps: flashOverlaps,
       evaporations,
     };
   };
@@ -541,48 +489,6 @@ export async function run(
           from: lastPhase, to: p.phase, stats: p.stats_after,
         });
         lastPhase = p.phase;
-      }
-    }
-
-    // Process cross-branch overlaps reported by FlashSpore
-    for (const p of batchResults) {
-      if (!p.overlaps?.length) continue;
-
-      const currentNodes = scanTree(workspacePath);
-      const nodePathSet = new Set(currentNodes.map(n => n.path));
-      const nodeSignalMap = new Map(currentNodes.map(n => [n.path, n.signals]));
-
-      for (const overlap of p.overlaps) {
-        // Validate both paths exist
-        if (!nodePathSet.has(overlap.target_path) || !nodePathSet.has(overlap.overlap_path)) continue;
-        // Skip if either node already has high conflict (prevent escalation spam)
-        const targetSignals = nodeSignalMap.get(overlap.target_path);
-        const overlapSignals = nodeSignalMap.get(overlap.overlap_path);
-        if (!targetSignals || !overlapSignals) continue;
-        if (targetSignals.conflict >= 6 || overlapSignals.conflict >= 6) continue;
-
-        // Raise conflict on both nodes
-        const overlapDispatcher = new MutationDispatcher(stigRoot);
-        const reason = `Cross-branch overlap: ${overlap.target_path} ~ ${overlap.overlap_path}: ${overlap.reason}`;
-        overlapDispatcher.dispatch(
-          createMutation('UPDATE_SIGNALS', overlap.target_path, {
-            signals: { conflict: Math.min(10, targetSignals.conflict + 2) },
-            conflict_reason: reason,
-          }),
-        );
-        overlapDispatcher.dispatch(
-          createMutation('UPDATE_SIGNALS', overlap.overlap_path, {
-            signals: { conflict: Math.min(10, overlapSignals.conflict + 2) },
-            conflict_reason: reason,
-          }),
-        );
-
-        flashOverlaps++;
-        telemetry.emit({
-          type: 'flash_overlap', timestamp: ts(), pulse: p.pulse_number,
-          target_path: overlap.target_path, overlap_path: overlap.overlap_path,
-          reason: overlap.reason,
-        });
       }
     }
 

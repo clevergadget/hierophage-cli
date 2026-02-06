@@ -12,15 +12,6 @@ export interface AgentCost {
 }
 
 /**
- * An overlap detected by FlashSpore between the current node's context and another branch.
- */
-export interface OverlapReport {
-  target_path: string;   // Node in current context that overlaps
-  overlap_path: string;  // Node in another branch
-  reason: string;        // Why these are the same concept
-}
-
-/**
  * Result of an agent's run: mutations to apply + cost incurred.
  */
 export interface AgentResult {
@@ -29,7 +20,6 @@ export interface AgentResult {
   error?: string;
   action?: string; // Agent's chosen action (DECOMPOSE, REVIEW, UPDATE_CONTENT, SETTLE)
   reasoning?: string; // Agent's stated reasoning for the action
-  overlaps?: OverlapReport[]; // Cross-branch overlaps detected as side-channel observation
 }
 
 /**
@@ -40,7 +30,6 @@ export interface ColonyContext {
   stats: TreeStats;
   targetDepth: number;
   topLevelConcepts?: string[]; // Names of root's children for cross-branch awareness
-  branchMap?: string; // Lightweight tree outline organized by branch (names + paths, no content)
 }
 
 /**

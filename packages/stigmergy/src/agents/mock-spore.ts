@@ -104,7 +104,6 @@ export class MockSpore implements Agent {
       cost: { api_calls: 0, input_tokens: 0, output_tokens: 0 },
       action,
       reasoning,
-      overlaps: [],
     };
   }
 }
