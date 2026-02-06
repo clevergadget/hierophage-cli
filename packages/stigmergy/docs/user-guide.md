@@ -296,6 +296,7 @@ What `stig run` reports:
 | `resolver_attempts` / `resolver_resolutions` | Conflict resolution results |
 | `synthesis_merges` | Sibling duplicates merged |
 | `flash_overlaps` | Cross-branch overlaps detected by FlashSpore |
+| `evaporations` | Nodes affected by signal evaporation |
 
 ---
 
@@ -324,6 +325,7 @@ Sequential steps:
 
 1. **Verifier stability check** — Verify up to 3 "stable-looking" leaf nodes
 2. **Parent signal propagation** — If all children settled, reduce parent need (includes coverage verification — children must cover parent scope or propagation is blocked and conflict raised)
+2½. **Signal evaporation** — Decay need (−0.25) and conflict (−0.08) on nodes not targeted in the last 10 pulses. Confidence is preserved. Prevents stale signals from accumulating as noise.
 3. **Scout patrol** — Detect and flag hollow nodes, tautologies
 4. **Grazer patrol** — Prune dead nodes (untouched 10+ pulses)
 5. **Resolver** — Resolve conflicts if triggered (see triggers below)
@@ -354,6 +356,19 @@ When a node is overheated and no mutations succeed:
 - Confidence nudged up, need nudged down
 - Priority rotates to other nodes
 
+### Signal Evaporation (Trace Decay)
+
+In real ant colonies, unused pheromone trails evaporate — old signals fade if they're not reinforced. The engine implements this as periodic signal decay during each maintenance cycle:
+
+- **Need** decays by 0.25 per cycle on idle nodes (floor: 1)
+- **Conflict** decays by 0.08 per cycle on idle nodes (floor: 0)
+- **Confidence does NOT decay** — accumulated knowledge persists
+- "Idle" means the node was not a pulse target in the last 10 pulses
+
+**Why this matters:** Without evaporation, a node flagged with need:7 at pulse 1 still shows need:7 at pulse 100 if no agent touches it. Old signals accumulate as noise — when everything has high need, nothing has high priority. Evaporation ensures that only actively relevant nodes maintain urgency.
+
+**Child-Need Dampening:** When FlashSpore decomposes a node, children inherit `parent_need - 2` (floor: 3) rather than `parent_need - 1`. This reduces aggregate need inflation from each DECOMPOSE action, working alongside evaporation to keep the priority queue meaningful.
+
 ---
 
 ## Telemetry & Replay
@@ -378,6 +393,7 @@ Every `stig run` writes a `telemetry.jsonl` file in the workspace root. Each lin
 | `resolver` | Maintenance | node, resolved, conflict before/after |
 | `synthesizer` | Maintenance | target, sources, merged |
 | `flash_overlap` | During pulse | target_path, overlap_path, reason |
+| `evaporation` | Maintenance | nodes_affected, avg_need_delta, avg_conflict_delta |
 
 ### Replay Command
 
@@ -397,6 +413,7 @@ stig replay --maintenance
 # Agent filter — events by agent type
 stig replay --agent verifier
 stig replay --agent overlap
+stig replay --agent evaporation
 ```
 
 ### Data Location
@@ -514,7 +531,6 @@ stig init "Build a todo app" \
 
 **Not implemented, but architecturally possible:**
 
-- **Evaporation** — Signals decay over time if nodes aren't touched, forcing re-evaluation
 - **Adaptive maintenance** — Frequency based on tree state, not fixed intervals
 - **Human-in-the-loop gates** — Pause at phase transitions for review
 - **Multi-goal trees** — Multiple root nodes with shared subtrees

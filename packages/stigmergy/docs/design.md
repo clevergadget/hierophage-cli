@@ -28,6 +28,7 @@ These are the fundamental mechanics the system draws from. Not all are implement
 |---|-----------|-------------|--------|
 | 1 | **Persistent Trace** | Append-only `mutations.log`, signal values on nodes | Active |
 | 2 | **Trace Reinforcement** | Confidence accumulation through repeated agent visits | Active |
+| 3 | **Trace Decay** | Signal evaporation: need −0.25, conflict −0.08 per maintenance cycle on idle nodes | Active |
 | 4 | **Gradient Following** | Priority queue: `need*2 - confidence + conflict*0.5 - depth*0.5` | Active |
 | 5 | **Local Context Only** | Agents see target + parent chain + siblings, never the whole tree | Active |
 | 7 | **Inhibitory Signals** | `conflict` pheromone repels FlashSpore, attracts Resolver | Active |
@@ -45,7 +46,6 @@ These are the fundamental mechanics the system draws from. Not all are implement
 
 | # | Primitive | Potential System Form | Notes |
 |---|-----------|----------------------|-------|
-| 3 | **Trace Decay** | Signal evaporation over time | See §7: Evaporation |
 | 6 | **Autocatalytic Tasks** | Patterns that spawn similar subtrees | See §7: Pre-Cognitive Interface |
 | 11 | **Path Entrenchment** | Learned execution paths become defaults | Not yet needed |
 | 18 | **Environment as Arbiter** | Tests/invariants resolve conflicts | See §7: Spec-Driven Evolution |
@@ -239,7 +239,7 @@ An architectural review of the system as of Phase 5 completion. This section sho
 
 **The Verifier's dual role creates fragility.** Stability checks ("is this implementable?") and coverage checks ("do children cover parent?") are different questions at different lifecycle points. A single LLM hallucination on a coverage check ("no, children don't cover this") can stall convergence for an entire branch by blocking parent propagation.
 
-**No signal evaporation.** A node flagged with conflict 3 stays at conflict 3 forever until an agent explicitly reduces it. Old signals accumulate as noise. The tree's signal-to-noise ratio degrades over long runs. This is the most theoretically important gap — Trace Decay (Primitive #3) is fundamental to stigmergy and we don't implement it.
+**Signal evaporation is conservative.** Trace Decay (Primitive #3) is now active: need decays −0.15 and conflict −0.05 per maintenance cycle on idle nodes. Confidence is preserved. The rates are intentionally gentle — aggressive decay would destabilize converging trees. Very long runs (500+ pulses) may benefit from tunable decay rates.
 
 **The adversarial function is incomplete.** FlashSpore grows. Scout checks syntax. Verifier checks implementability. But nobody challenges the *ideas themselves*. Nobody says "you specified real-time sync under a batch processing parent — that's a contradiction." The Skeptic design (§4) addresses this. Without it, the system can converge on well-written nonsense.
 
@@ -258,8 +258,8 @@ Ideas not yet implemented. Ranked by value to the current system.
 **The Skeptic (Semantic Adversary)**
 The most important missing agent. FlashSpore grows. Scout checks structure. Verifier checks implementability. Nobody challenges ideas. The Skeptic reads a node's content against its parent and siblings and attacks logical coherence: "You specified real-time sync under a batch processing parent." "These three requirements cannot coexist." Deposits typed ConflictReasons (`LOGICAL`, `SECURITY`, `ARCHITECTURAL`) that the Resolver can address with full context.
 
-**Signal Evaporation (Trace Decay)**
-Signals currently persist forever. In a real ant colony, unused pheromone trails fade. Without decay, old signals accumulate as noise. Implementation: every N pulses, signals on untouched nodes drift toward neutral (need and confidence decay toward 5, conflict toward 0). Forces re-evaluation of stale decisions. Prevents the tree from fossilizing.
+**Signal Evaporation (Trace Decay)** — IMPLEMENTED
+Need (−0.25) and conflict (−0.08) decay per maintenance cycle on idle nodes. Confidence preserved. Child-need dampening (parent_need − 2 instead of −1) reduces aggregate need inflation.
 
 **Analytics Output**
 A JSONL format capturing per-pulse telemetry: target, agent, mutations attempted/succeeded, signal changes, cost, tree stats. Enables data-driven tuning of maintenance intervals, agent thresholds, and priority weights. The ecology should be observable as a time series, not just a snapshot.
@@ -282,9 +282,6 @@ The system identifies "unfinished edges" — logical holes where a feature impli
 
 **Spec-Driven Evolution (The Ribosome)**
 When a spec node reaches stability, a Builder agent generates a unit test and stub implementation in a sandbox. If the code passes, reinforcement. If it fails, tension. The spec is validated by reality. The environment becomes the arbiter (Primitive #18).
-
-**The Dreamtime Protocol**
-When user activity stops, the system enters Dream Mode. Aggressive pruning. Vector re-indexing. Compression of the day's chaos into dense narrative summary nodes. Over time, the system develops "intuition" — it remembers that last month you rejected Redis for cost reasons, so today it inhibits expensive architecture choices without being told.
 
 **Conflict Archaeology**
 Every conflict raised leaves a `conflict_reason`. Over time, this becomes a dataset of *why things break*. Trend analysis: "Coverage gaps happen 3x more in API branches." "Hollow nodes cluster at depth 4." A meta-agent that reads conflict patterns and evolves the swarm's own heuristics.

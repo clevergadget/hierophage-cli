@@ -111,6 +111,9 @@ function renderTimeline(events: TelemetryEvent[]): void {
   const overlapCount = events.filter(e => e.type === 'flash_overlap').length;
   if (overlapCount > 0) summaryParts.push(`${overlapCount} overlaps`);
 
+  const evapCount = events.filter(e => e.type === 'evaporation').reduce((sum, e) => sum + (e.type === 'evaporation' ? e.nodes_affected : 0), 0);
+  if (evapCount > 0) summaryParts.push(`${evapCount} evaporated`);
+
   console.log(chalk.dim(`Summary: ${summaryParts.join(' | ')}`));
 }
 
@@ -203,13 +206,15 @@ function formatMaintenanceEvent(event: TelemetryEvent): string {
         : chalk.dim(`Synthesizer: flagged ${event.sources.join(', ')} ~ ${shortPath(event.target)}`);
     case 'flash_overlap':
       return chalk.hex('#FFA500')(`Overlap: ${shortPath(event.target_path)} ~ ${shortPath(event.overlap_path)} (${event.reason})`);
+    case 'evaporation':
+      return chalk.hex('#8B7355')(`Evaporation: ${event.nodes_affected} nodes (need ${event.avg_need_delta.toFixed(2)}, conflict ${event.avg_conflict_delta.toFixed(2)})`);
     default:
       return '';
   }
 }
 
 function getMaintenanceEventsInRange(events: TelemetryEvent[], startPulse: number, endPulse: number): TelemetryEvent[] {
-  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap']);
+  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap', 'evaporation']);
   return events.filter(e =>
     maintenanceTypes.has(e.type) &&
     e.pulse >= startPulse &&
@@ -282,7 +287,7 @@ function getNodesFromEvent(event: TelemetryEvent): string[] {
 // --- Maintenance View ---
 
 function renderMaintenanceView(events: TelemetryEvent[]): void {
-  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap']);
+  const maintenanceTypes = new Set(['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap', 'evaporation']);
   const maintenanceEvents = events.filter(e => maintenanceTypes.has(e.type));
 
   if (maintenanceEvents.length === 0) {
@@ -367,6 +372,7 @@ function renderAgentFilter(events: TelemetryEvent[], agentName: string): void {
     if (e.type === 'resolver') return agentName.toLowerCase() === 'resolver';
     if (e.type === 'synthesizer') return agentName.toLowerCase() === 'synthesizer';
     if (e.type === 'flash_overlap') return agentName.toLowerCase() === 'overlap' || agentName.toLowerCase() === 'flash_overlap';
+    if (e.type === 'evaporation') return agentName.toLowerCase() === 'evaporation';
     return false;
   });
 

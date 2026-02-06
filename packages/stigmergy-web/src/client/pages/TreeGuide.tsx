@@ -80,6 +80,10 @@ export function TreeGuide() {
               </SignalCard>
             </div>
           </Field>
+          <Field
+            name="Signal Evaporation"
+            desc="Need and conflict decay on idle nodes during each maintenance cycle (need: −0.25, conflict: −0.08). Nodes that haven't been pulse targets in the last 10 pulses gradually lose urgency — like unused pheromone trails fading. Confidence never decays, because accumulated knowledge persists. This prevents stale signals from accumulating as noise and forces the colony to re-evaluate old decisions."
+          />
           <Field name="Evidence" desc="Heuristic quality counters: acceptance criteria, examples, and risks mentioned in the content. Used by the Scout to detect hollow nodes — content that looks substantial but has no actionable detail." />
           <Field name="Content" desc="The markdown body — the actual specification text. This is what agents read, write, and refine. It's what a human or code generator would eventually build from." />
           <Field name="Scaffold" desc="Pre-built structural nodes created during initialization (e.g., 'user-flows', 'architecture', 'testing'). They get a priority boost to ensure the colony explores all important dimensions early — like scout ants fanning out to map the territory." />

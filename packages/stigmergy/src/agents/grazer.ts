@@ -64,7 +64,7 @@ export class Grazer {
       // Stagnant detection: zero confidence, high need, no children, after warmup
       if (
         pulsesElapsed >= 10 &&
-        node.signals.confidence === 0 &&
+        node.signals.confidence <= 1 &&
         node.signals.need > 3 &&
         children.length === 0
       ) {

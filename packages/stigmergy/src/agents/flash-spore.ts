@@ -97,6 +97,13 @@ Slugs must NOT repeat the parent name. Each path must be unique.
 - No DELETE_NODE mutations.
 - Each mutation path must be unique.
 
+## Signal Evaporation
+
+Idle nodes naturally lose need and conflict over time (like pheromone evaporation). Confidence never decays. This means:
+- High-need nodes that haven't been worked on will cool off — don't re-inflate their need unless genuinely warranted.
+- Low-need nodes have earned their calm. If you REVIEW a low-need node, don't raise its need unless you find real gaps.
+- When you DECOMPOSE, children start at need = parent_need - 2 (floor 3). Don't override this with higher values unless truly urgent.
+
 ## Semantic Deduplication (CRITICAL)
 
 Before creating a child, check if a sibling with the same MEANING already exists.
@@ -457,7 +464,7 @@ export function responseToMutations(response: FlashResponse, target: StigNode): 
           name: m.name ?? sanitized.split('/').pop() ?? sanitized,
           content: m.content ?? '',
           signals: {
-            need: signals.need ?? Math.max(3, target.signals.need - 1),
+            need: signals.need ?? Math.max(3, target.signals.need - 2),
             confidence: signals.confidence ?? 0,
             conflict: signals.conflict ?? 0,
           },

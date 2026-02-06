@@ -224,16 +224,15 @@ export class Synthesizer {
           if (synthesis.content) {
             result.duplicateGroups.push({ ...group, action: 'synthesized' });
 
-            // Calculate boosted confidence: max of all + 1
+            // Merged confidence: max of all sources (don't inflate — synthesis is unverified)
             const maxConf = Math.max(...nodesInGroup.map(n => n.signals.confidence));
-            const boostedConf = Math.min(10, maxConf + 1);
 
             // Single atomic MERGE_NODES mutation
             result.mutations.push(
               createMutation('MERGE_NODES', canonical.path, {
                 content: synthesis.content,
                 name: synthesis.name ?? canonical.name,
-                signals: { confidence: boostedConf, need: 1, conflict: 0 },
+                signals: { confidence: maxConf, need: 1, conflict: 0 },
                 merge_sources: others.map(n => n.path),
               }),
             );
@@ -420,11 +419,11 @@ function buildSynthesisPrompt(canonical: StigNode, others: StigNode[], reason: s
 
 /**
  * Check if a node is stable enough to merge.
- * Aggressively loosened - merge early to prevent sprawl.
- * Only skip if node has very high conflict (active dispute).
+ * Only merge nodes with low conflict — actively disputed nodes should
+ * be resolved first before merging.
  */
 function isStable(node: StigNode): boolean {
-  return node.signals.conflict <= 5; // Merge anything that isn't heavily conflicted
+  return node.signals.conflict <= 2;
 }
 
 /**

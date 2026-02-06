@@ -187,14 +187,20 @@ export function Concepts() {
           </Link>
           .
         </p>
-        <Future>
-          <strong>Signal Evaporation (Trace Decay)</strong> — In real ant colonies, unused
-          pheromone trails fade over time. That's what makes the system adaptive — old paths
-          disappear if they're not reinforced. Currently our signals persist forever. Adding
-          evaporation — where signals on untouched nodes drift toward neutral every N pulses —
-          would force re-evaluation of stale decisions and prevent the tree from fossilizing.
-          This is fundamental to stigmergy and we know it needs to happen.
-        </Future>
+        <div className="mt-4 bg-[#1e1e32] border border-[#3a3a55] rounded p-4">
+          <div className="text-xs font-semibold text-[#e0e0ec] mb-2">Signal Evaporation (Trace Decay)</div>
+          <p className="text-xs text-[#a0a0b8] leading-relaxed">
+            In real ant colonies, unused pheromone trails fade over time. That's what makes the
+            system adaptive — old paths disappear if they're not reinforced. The engine implements
+            this: during each maintenance cycle, <strong className="text-[#e0e0ec]">need</strong> decays
+            by 0.25 and <strong className="text-[#e0e0ec]">conflict</strong> decays by 0.08 on nodes
+            that haven't been pulse targets in the last 10 pulses.{' '}
+            <strong className="text-[#e0e0ec]">Confidence does not decay</strong> — accumulated
+            knowledge persists, just like learning. This forces re-evaluation of stale decisions
+            and prevents the tree from fossilizing. Nodes that matter keep getting visited and
+            reinforced; nodes that don't gradually fade from priority.
+          </p>
+        </div>
       </Section>
 
       <Section title="Colony Phases">
@@ -349,9 +355,9 @@ export function Concepts() {
             is the most important missing piece.
           </li>
           <li>
-            <strong className="text-[#e0e0ec]">No signal evaporation</strong> — Signals persist
-            forever. Old conflict markers accumulate as noise. The signal-to-noise ratio degrades
-            over very long runs.
+            <strong className="text-[#e0e0ec]">Evaporation is gentle</strong> — Signal decay rates
+            (need: 0.25, conflict: 0.08 per cycle) are conservative. Very long runs may need
+            more aggressive tuning.
           </li>
           <li>
             <strong className="text-[#e0e0ec]">Fixed maintenance scheduling</strong> — The
@@ -409,7 +415,7 @@ export function Concepts() {
             Emergent lifecycle stage based on average confidence. Guides agent behavior without explicit coordination.
           </GlossaryTerm>
           <GlossaryTerm term="Evaporation" link="/concepts">
-            (Future) Signal decay over time — unused pheromone trails fading, forcing re-evaluation of stale decisions.
+            Signal decay on idle nodes — need and conflict fade if not reinforced, like unused pheromone trails disappearing. Confidence persists.
           </GlossaryTerm>
         </div>
       </Section>

@@ -53,6 +53,7 @@ export interface RunResult {
   resolver_resolutions: number;
   synthesis_merges: number;
   flash_overlaps: number;
+  evaporations: number;
 }
 
 /**
@@ -340,6 +341,74 @@ async function propagateParentSignals(
 }
 
 /**
+ * Evaporate signals on idle nodes.
+ * Need and conflict decay on nodes that haven't been pulse targets recently.
+ * Confidence does NOT decay — accumulated knowledge persists.
+ *
+ * @returns Number of nodes affected by evaporation.
+ */
+export interface EvaporationRates {
+  needDecay: number;
+  conflictDecay: number;
+}
+
+export const DEFAULT_EVAPORATION_RATES: EvaporationRates = { needDecay: 0.25, conflictDecay: 0.08 };
+
+export function evaporateSignals(
+  nodes: StigNode[],
+  dispatcher: MutationDispatcher,
+  recentTargets: Set<string>,
+  currentPulse: number,
+  telemetry?: TelemetryEmitter,
+  rates: EvaporationRates = DEFAULT_EVAPORATION_RATES,
+): number {
+  const NEED_DECAY = rates.needDecay;
+  const CONFLICT_DECAY = rates.conflictDecay;
+  const ts = () => new Date().toISOString();
+
+  let affected = 0;
+  let totalNeedDelta = 0;
+  let totalConflictDelta = 0;
+
+  for (const node of nodes) {
+    // Skip recently-touched nodes
+    if (recentTargets.has(node.path)) continue;
+
+    const needDecay = node.signals.need > 1 ? Math.min(NEED_DECAY, node.signals.need - 1) : 0;
+    const conflictDecay = node.signals.conflict > 0 ? Math.min(CONFLICT_DECAY, node.signals.conflict) : 0;
+
+    if (needDecay === 0 && conflictDecay === 0) continue;
+
+    const newNeed = Math.round((node.signals.need - needDecay) * 100) / 100;
+    const newConflict = Math.round((node.signals.conflict - conflictDecay) * 100) / 100;
+
+    const signals: { need?: number; conflict?: number } = {};
+    if (needDecay > 0) signals.need = Math.max(1, newNeed);
+    if (conflictDecay > 0) signals.conflict = Math.max(0, newConflict);
+
+    const result = dispatcher.dispatch(createMutation('UPDATE_SIGNALS', node.path, { signals }));
+    if (result.success) {
+      affected++;
+      totalNeedDelta -= needDecay;
+      totalConflictDelta -= conflictDecay;
+    }
+  }
+
+  if (affected > 0 && telemetry) {
+    telemetry.emit({
+      type: 'evaporation',
+      timestamp: ts(),
+      pulse: currentPulse,
+      nodes_affected: affected,
+      avg_need_delta: Math.round((totalNeedDelta / affected) * 100) / 100,
+      avg_conflict_delta: Math.round((totalConflictDelta / affected) * 100) / 100,
+    });
+  }
+
+  return affected;
+}
+
+/**
  * Run the simulation loop with full cost protection:
  * - Budget cap (API calls + tokens)
  * - Max pulses circuit breaker
@@ -375,6 +444,7 @@ export async function run(
   let resolverResolutions = 0;
   let synthesisMerges = 0;
   let flashOverlaps = 0;
+  let evaporations = 0;
 
   // Initialize Verifier and Resolver if API key available
   const apiKey = process.env['GEMINI_API_KEY'];
@@ -425,6 +495,7 @@ export async function run(
       resolver_resolutions: resolverResolutions,
       synthesis_merges: synthesisMerges,
       flash_overlaps: flashOverlaps,
+      evaporations,
     };
   };
 
@@ -567,6 +638,11 @@ export async function run(
       propagations += propResult.propagated;
       coverageChecks += propResult.coverageChecks;
       coverageFailures += propResult.coverageFailures;
+
+      // 2.5. Signal evaporation — decay need and conflict on idle nodes
+      const recentTargets = new Set(pulses.slice(-MAINTENANCE_INTERVAL).map(p => p.target_path));
+      const evapCount = evaporateSignals(nodes, dispatcher, recentTargets, pulses.length, telemetry);
+      evaporations += evapCount;
 
       // 3. Scout patrol (detect and flag problems)
       const scoutReport = scout.patrol(nodes);

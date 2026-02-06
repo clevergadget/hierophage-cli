@@ -293,6 +293,10 @@ export function Agents() {
             <span><strong className="text-green-400">Propagation</strong> — Settled children push stability upward to parents (with coverage gate)</span>
           </li>
           <li className="flex gap-3">
+            <span className="text-[#707088] font-semibold w-4 shrink-0">2½</span>
+            <span><strong className="text-amber-700">Evaporation</strong> — Decay need (−0.25) and conflict (−0.08) on idle nodes. Confidence persists.</span>
+          </li>
+          <li className="flex gap-3">
             <span className="text-[#707088] font-semibold w-4 shrink-0">3.</span>
             <span><strong className="text-amber-400">Scout</strong> — Detect hollow nodes, tautologies, similar siblings</span>
           </li>
@@ -372,14 +376,6 @@ export function Agents() {
           Scout rules that emerge from data rather than being hand-coded.
         </Future>
 
-        <Future>
-          <strong>The Dreamtime Protocol</strong> — When user activity stops, the system enters
-          Dream Mode. Aggressive pruning. Re-evaluation of stale nodes. Compression of the
-          day's activity into dense summary observations. Over time, the system develops
-          "intuition" — it remembers that last month you rejected Redis for cost reasons, so
-          today it inhibits expensive architecture choices without being told. Cross-session
-          learning through environmental memory.
-        </Future>
       </Section>
     </div>
   );

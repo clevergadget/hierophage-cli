@@ -53,7 +53,7 @@ export function Replay() {
   const pulseEvents = events.filter(
     (e): e is Extract<TelemetryEvent, { type: 'pulse' }> => e.type === 'pulse',
   );
-  const maintenanceTypes = ['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap'];
+  const maintenanceTypes = ['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap', 'evaporation'];
   const maintenanceEvents = events.filter((e) => maintenanceTypes.includes(e.type));
 
   // Total cost
@@ -275,7 +275,7 @@ function MaintenanceView({
   filter: string;
   onFilterChange: (f: string) => void;
 }) {
-  const types = ['all', 'scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap'];
+  const types = ['all', 'scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'flash_overlap', 'evaporation'];
   const filtered = filter === 'all' ? events : events.filter((e) => e.type === filter);
 
   return (
@@ -325,6 +325,7 @@ function formatMaintenanceEvent(event: TelemetryEvent): string {
     case 'resolver': return `${event.node}: ${event.resolved ? 'RESOLVED' : 'unresolved'} (${event.conflict_before} → ${event.conflict_after})`;
     case 'synthesizer': return `${event.target} ← ${event.sources.join(', ')} ${event.merged ? '(merged)' : '(skipped)'}`;
     case 'flash_overlap': return `${event.target_path} ~ ${event.overlap_path}: ${event.reason}`;
+    case 'evaporation': return `${event.nodes_affected} nodes decayed (need ${event.avg_need_delta.toFixed(2)}, conflict ${event.avg_conflict_delta.toFixed(2)})`;
     default: return JSON.stringify(event);
   }
 }
