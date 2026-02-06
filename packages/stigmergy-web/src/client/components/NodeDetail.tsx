@@ -68,44 +68,42 @@ export function NodeDetail({ node, ancestors, siblings, onClose }: NodeDetailPro
 
       <div className="mt-4 pt-4 border-t border-[#3a3a55] overflow-y-auto flex-1">
         {ancestors && ancestors.length > 0 && (
-          <>
-            {ancestors.map((a, i) => (
-              <div key={a.path} className="mb-3 pb-3 border-b border-[#282845] last:border-0">
-                <div className="text-[11px] text-[#a8a8b4] flex items-center gap-1.5 mb-1">
-                  <span className="bg-[#282845] text-[#8888a0] px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">
-                    {i === 0 ? 'ROOT' : `DEPTH ${i}`}
-                  </span>
-                  <span className="text-[#c4c4d0]">{a.name}</span>
-                </div>
-                <div className="text-[10px] text-[#707088]">
-                  <span className="text-red-400">n:{a.need}</span>{' '}
-                  <span className="text-green-400">c:{a.confidence}</span>
-                  {a.conflict > 0 && <span className="text-amber-400"> x:{a.conflict}</span>}
-                </div>
-                {a.content && (
-                  <div className="text-[11px] text-[#9090a8] mt-1 whitespace-pre-wrap line-clamp-3">
-                    {a.content}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Current node (target) */}
-            <div className="mb-3 pb-3 border-b border-[#282845]">
-              <div className="text-xs text-[#a8a8b4] flex items-center gap-1.5 mb-1">
+          ancestors.map((a, i) => (
+            <div key={a.path} className="mb-3 pb-3 border-b border-[#282845] last:border-0">
+              <div className="text-[11px] text-[#a8a8b4] flex items-center gap-1.5 mb-1">
                 <span className="bg-[#282845] text-[#8888a0] px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">
-                  DEPTH {ancestors.length}
+                  {i === 0 ? 'ROOT' : `DEPTH ${i}`}
                 </span>
-                <span className="text-[#f0f0f8] font-semibold">{node.name}</span>
+                <span className="text-[#c4c4d0]">{a.name}</span>
               </div>
-              {node.content && (
-                <div className="text-[13px] text-[#c0c0d4] mt-1 whitespace-pre-wrap leading-relaxed">
-                  {node.content}
+              <div className="text-[10px] text-[#707088]">
+                <span className="text-red-400">n:{a.need}</span>{' '}
+                <span className="text-green-400">c:{a.confidence}</span>
+                {a.conflict > 0 && <span className="text-amber-400"> x:{a.conflict}</span>}
+              </div>
+              {a.content && (
+                <div className="text-[11px] text-[#9090a8] mt-1 whitespace-pre-wrap line-clamp-3">
+                  {a.content}
                 </div>
               )}
             </div>
-          </>
+          ))
         )}
+
+        {/* Current node content */}
+        <div className="mb-3 pb-3 border-b border-[#282845]">
+          <div className="text-xs text-[#a8a8b4] flex items-center gap-1.5 mb-1">
+            <span className="bg-[#282845] text-[#8888a0] px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">
+              {node.path === '.' ? 'ROOT' : `DEPTH ${ancestors?.length ?? 0}`}
+            </span>
+            <span className="text-[#f0f0f8] font-semibold">{node.name}</span>
+          </div>
+          {node.content && (
+            <div className="text-[13px] text-[#c0c0d4] mt-1 whitespace-pre-wrap leading-relaxed">
+              {node.content}
+            </div>
+          )}
+        </div>
 
         {siblings && siblings.length > 0 && (
           <div className="mt-2 pt-2 border-t border-[#3a3a55]">
