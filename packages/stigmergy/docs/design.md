@@ -98,7 +98,7 @@ The priority formula includes `- depth * 0.5` rather than a hard depth cap.
 
 ## 4. The Agent Ecology
 
-Six agents form the current ecology. Each occupies a distinct niche. The metaphor matters — these are species, not microservices.
+Seven agents form the current ecology. Each occupies a distinct niche. The metaphor matters — these are species, not microservices.
 
 ### Growth Species
 
@@ -120,7 +120,9 @@ Six agents form the current ecology. Each occupies a distinct niche. The metapho
 
 **Synthesizer** — Sibling duplicate fusion. Detects semantic duplicates among siblings ("Create Task" vs "Task Creation"), generates synthesized content, applies atomic MERGE_NODES mutation. Key lesson encoded in prompt: Create/Delete/Update are DIFFERENT operations — the LLM will over-merge without explicit prohibitions.
 
-**Cross-Branch Scent Trails** — *Removed.* The original implementation sent a full `branchMap` (~7k tokens) to every FlashSpore pulse, violating the Local Context Only primitive and scaling O(n²). Removed in favor of delegating cross-branch overlap detection to the maintenance ecology (Synthesizer for siblings, Scout for name similarity). A new dedicated cross-branch patrol organism is planned — see §8.
+### Cross-Branch Patrol Species
+
+**Termite** — Cross-branch mound inspector. Named after termite mound inspection behavior — termites constantly patrol their tunnel network checking galleries for structural redundancy. When a termite finds two tunnels serving the same purpose, it deposits alarm pheromone. The Termite samples random cross-branch node pairs (weighted toward low-confidence, recently-created nodes) and asks a binary LLM question: "Same concept?" If yes, raises conflict (+2) on both nodes with cross-reference reasons. Detection only — the existing ecology (Resolver, evaporation, FlashSpore seeing conflict) handles resolution. Fills the gap left by the branchMap removal: the Synthesizer handles sibling duplicates, but cross-branch equivalents like `state-management/local-storage` and `persistence/browser-storage` need a dedicated patrol agent.
 
 ### The Missing Species: The Skeptic
 
@@ -234,7 +236,7 @@ An architectural review of the system as of Phase 5 completion. This section sho
 
 ### What Needs Attention
 
-**The maintenance cycle is substantial.** Every 10 pulses: Verifier (stability), parent propagation, Verifier (coverage), Scout, Grazer, Resolver (conditional), and Synthesizer. That's 7 operations, several with LLM calls, all on one timer. The aggregate maintenance cost may exceed growth cost in late-phase runs. This needs condition-triggered scheduling rather than fixed intervals. (Previously included the Weaver, then branchMap in FlashSpore — both removed for violating locality.)
+**The maintenance cycle is substantial.** Every 10 pulses: Verifier (stability), parent propagation, Verifier (coverage), Scout, Grazer, Resolver (conditional), Synthesizer, and Termite (cross-branch patrol). That's 8 operations, several with LLM calls, all on one timer. The aggregate maintenance cost may exceed growth cost in late-phase runs. This needs condition-triggered scheduling rather than fixed intervals. (Previously included the Weaver, then branchMap in FlashSpore — both removed for violating locality.)
 
 **The Verifier's dual role creates fragility.** Stability checks ("is this implementable?") and coverage checks ("do children cover parent?") are different questions at different lifecycle points. A single LLM hallucination on a coverage check ("no, children don't cover this") can stall convergence for an entire branch by blocking parent propagation.
 

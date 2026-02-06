@@ -9,6 +9,7 @@ import { Scout } from '../agents/scout.js';
 import { Verifier } from '../agents/verifier.js';
 import { Resolver } from '../agents/resolver.js';
 import { Synthesizer } from '../agents/synthesizer.js';
+import { Termite, sampleCrossBranchPairs } from '../agents/termite.js';
 import { createMutation } from '../dispatch/mutations.js';
 import { TelemetryEmitter } from './telemetry.js';
 import type { Agent } from '../agents/agent.js';
@@ -52,6 +53,8 @@ export interface RunResult {
   resolver_resolutions: number;
   synthesis_merges: number;
   evaporations: number;
+  termite_inspections: number;
+  termite_detections: number;
 }
 
 /**
@@ -394,12 +397,15 @@ export async function run(
   let resolverResolutions = 0;
   let synthesisMerges = 0;
   let evaporations = 0;
+  let termiteInspections = 0;
+  let termiteDetections = 0;
 
   // Initialize Verifier and Resolver if API key available
   const apiKey = process.env['GEMINI_API_KEY'];
   const verifier = apiKey ? new Verifier('gemini-2.5-flash-lite', apiKey) : null;
   const resolver = apiKey ? new Resolver('gemini-2.5-flash-lite', apiKey) : null;
   const synthesizer = apiKey ? new Synthesizer('gemini-2.5-flash-lite', apiKey) : null;
+  const termite = apiKey ? new Termite('gemini-2.5-flash-lite', apiKey) : null;
 
   // Track phase for crystallization gate
   let lastPhase: ColonyPhase = 'germination';
@@ -444,6 +450,8 @@ export async function run(
       resolver_resolutions: resolverResolutions,
       synthesis_merges: synthesisMerges,
       evaporations,
+      termite_inspections: termiteInspections,
+      termite_detections: termiteDetections,
     };
   };
 
@@ -662,6 +670,39 @@ export async function run(
           });
         }
         synthesisMerges += synthResult.duplicateGroups.filter(g => g.action === 'synthesized').length;
+      }
+
+      // 7. Termite: cross-branch mound inspection (detect cross-branch duplicates)
+      if (termite) {
+        const freshNodes = scanTree(workspacePath);
+        const pairs = sampleCrossBranchPairs(freshNodes, config.cross_check.pairs_per_pulse, config.cross_check.min_tree_depth);
+
+        for (const [nodeA, nodeB] of pairs) {
+          termiteInspections++;
+          const result = await termite.inspect(nodeA, nodeB);
+
+          telemetry.emit({
+            type: 'termite', timestamp: ts(), pulse: pulses.length,
+            node_a: nodeA.path, node_b: nodeB.path,
+            equivalent: result.are_equivalent,
+            reasoning: result.reasoning,
+          });
+
+          if (result.are_equivalent && !result.error) {
+            termiteDetections++;
+            const reason = `Cross-branch duplicate: equivalent to "${nodeB.name}" (${nodeB.path}) — ${result.reasoning}`;
+            const reasonB = `Cross-branch duplicate: equivalent to "${nodeA.name}" (${nodeA.path}) — ${result.reasoning}`;
+
+            dispatcher.dispatch(createMutation('UPDATE_SIGNALS', nodeA.path, {
+              signals: { conflict: Math.min(10, nodeA.signals.conflict + 2) },
+              conflict_reason: reason,
+            }));
+            dispatcher.dispatch(createMutation('UPDATE_SIGNALS', nodeB.path, {
+              signals: { conflict: Math.min(10, nodeB.signals.conflict + 2) },
+              conflict_reason: reasonB,
+            }));
+          }
+        }
       }
     }
   }

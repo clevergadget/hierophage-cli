@@ -117,6 +117,7 @@ function printResult(result: RunResult, config: WorkspaceConfig): void {
   }
   if (result.synthesis_merges > 0) maintenanceStats.push(`${chalk.hex('#9B59B6')(String(result.synthesis_merges))} synthesized`);
   if (result.evaporations > 0) maintenanceStats.push(`${chalk.hex('#8B7355')(String(result.evaporations))} evaporated`);
+  if (result.termite_inspections > 0) maintenanceStats.push(`${chalk.hex('#D2691E')(String(result.termite_detections))}/${result.termite_inspections} termite`);
   const maintenanceStr = maintenanceStats.length > 0 ? ` | ${maintenanceStats.join(', ')}` : '';
 
   // Verification stats

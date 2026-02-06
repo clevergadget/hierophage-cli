@@ -53,7 +53,7 @@ export function Replay() {
   const pulseEvents = events.filter(
     (e): e is Extract<TelemetryEvent, { type: 'pulse' }> => e.type === 'pulse',
   );
-  const maintenanceTypes = ['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'evaporation'];
+  const maintenanceTypes = ['scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'evaporation', 'termite'];
   const maintenanceEvents = events.filter((e) => maintenanceTypes.includes(e.type));
 
   // Total cost
@@ -288,7 +288,7 @@ function MaintenanceView({
   filter: string;
   onFilterChange: (f: string) => void;
 }) {
-  const types = ['all', 'scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'evaporation'];
+  const types = ['all', 'scout', 'grazer', 'verifier_stability', 'verifier_coverage', 'propagation', 'resolver', 'synthesizer', 'evaporation', 'termite'];
   const filtered = filter === 'all' ? events : events.filter((e) => e.type === filter);
 
   return (
@@ -320,6 +320,7 @@ function MaintenanceView({
               e.type === 'scout' ? 'text-amber-600' :
               e.type.includes('verifier') ? 'text-green-600' :
               e.type === 'resolver' ? 'text-indigo-600' :
+              e.type === 'termite' ? 'text-amber-800' :
               'text-slate-600'
             }`}>
               {e.type.replace('_', ' ')}
@@ -349,6 +350,7 @@ function formatMaintenanceEvent(event: TelemetryEvent): string {
     case 'resolver': return `${event.node}: ${event.resolved ? 'RESOLVED' : 'unresolved'} (${event.conflict_before} → ${event.conflict_after})`;
     case 'synthesizer': return `${event.target} ← ${event.sources.join(', ')} ${event.merged ? '(merged)' : '(skipped)'}`;
     case 'evaporation': return `${event.nodes_affected} nodes decayed (need ${event.avg_need_delta.toFixed(2)}, conflict ${event.avg_conflict_delta.toFixed(2)})`;
+    case 'termite': return `${event.node_a} ${event.equivalent ? '≡' : '≠'} ${event.node_b}${event.equivalent && event.reasoning ? ` — ${event.reasoning}` : ''}`;
     default: return JSON.stringify(event);
   }
 }

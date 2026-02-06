@@ -52,6 +52,8 @@ export { Verifier } from './agents/verifier.js';
 export type { StabilityVerification, CoverageAssessment } from './agents/verifier.js';
 export { GoalAnalyst } from './agents/goal-analyst.js';
 export type { SpecialConcern, GoalAnalysis } from './agents/goal-analyst.js';
+export { Termite, sampleCrossBranchPairs } from './agents/termite.js';
+export type { InspectionResult } from './agents/termite.js';
 
 // Simulation
 export { pulse, run, batchPulse } from './simulation/pulse.js';

@@ -251,6 +251,34 @@ export function Agents() {
       </AgentCard>
 
       <AgentCard
+        name="Termite"
+        role="Cross-Branch Mound Inspector"
+        emoji="🪵"
+        color="#D2691E"
+        frequency="Every 10 pulses"
+        model="gemini-2.5-flash-lite"
+      >
+        <p>
+          Named after termite mound inspection — termites constantly patrol their mound's tunnel
+          network, checking galleries for structural redundancy. When a termite finds two tunnels
+          serving the same purpose, it deposits alarm pheromone so the colony can reorganize.
+        </p>
+        <p className="mt-3 text-slate-500">
+          The Termite fills a gap left by the branchMap removal: <strong>cross-branch duplicate detection</strong>.
+          The Synthesizer handles sibling duplicates (same parent). The Scout flags similar siblings.
+          But if <code className="text-slate-800 bg-slate-100 px-1 py-0.5 rounded text-xs border border-slate-200">state-management/local-storage</code> and{' '}
+          <code className="text-slate-800 bg-slate-100 px-1 py-0.5 rounded text-xs border border-slate-200">persistence/browser-storage</code>{' '}
+          describe the same concept under different parents, nothing else catches it.
+        </p>
+        <p className="mt-3 text-slate-500">
+          <strong>Mechanism:</strong> Each maintenance cycle, the Termite samples random cross-branch
+          pairs (weighted toward recently created, low-confidence nodes) and asks a binary LLM question:
+          "Same concept?" If yes, it raises conflict (+2) on both nodes with a cross-reference reason.
+          Detection only — the existing ecology handles resolution.
+        </p>
+      </AgentCard>
+
+      <AgentCard
         name="GoalAnalyst"
         role="Initialization Intelligence"
         emoji="🔍"
@@ -301,6 +329,10 @@ export function Agents() {
             <li className="flex gap-3">
               <span className="text-slate-400 font-semibold w-6 shrink-0 font-mono">06.</span>
               <span><strong className="text-purple-600">Synthesizer</strong> — Merge semantic duplicates</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-slate-400 font-semibold w-6 shrink-0 font-mono">07.</span>
+              <span><strong style={{ color: '#D2691E' }}>Termite</strong> — Cross-branch mound inspection (detect cross-branch duplicates)</span>
             </li>
           </ol>
         </div>

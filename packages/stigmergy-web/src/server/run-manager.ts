@@ -157,6 +157,7 @@ export class RunManager {
       case 'propagation':
       case 'resolver':
       case 'synthesizer':
+      case 'termite':
         this.broadcast('maintenance', { agent: event.type, details: event });
         break;
     }

@@ -157,17 +157,26 @@ The tree transitions through phases based on aggregate confidence:
 
 **Important:** Explicitly told what NOT to merge (Create/Delete/Update are different operations)
 
-### Cross-Branch Scent Trails (built into FlashSpore)
+### Termite
 
-**Role:** Distributed cross-branch overlap detection.
+**Role:** Cross-branch mound inspector. Detects semantic duplicates across different branches.
 
-**How it works:**
-- FlashSpore receives a lightweight `branchMap` on every pulse — node names and paths organized by branch (no content)
-- While working on its target node, FlashSpore can observe overlaps with other branches as a side-channel
-- Detected overlaps raise conflict (+2) on both nodes for the Resolver to address
-- Most pulses report zero overlaps — this is normal
+**Behavior:**
+- Each maintenance cycle, samples random cross-branch node pairs
+- Pairs are weighted toward low-confidence (recently created) nodes — fresh construction material is more likely to be redundant
+- Asks a binary LLM question per pair: "Do these two nodes describe the same concept?"
+- If equivalent, raises conflict (+2) on both nodes with cross-reference reasons
+- Detection only — the existing ecology (Resolver, evaporation) handles resolution
 
-**Why this replaces the Weaver:** The original Weaver agent violated the Local Context Only principle by ingesting the entire tree in one LLM call. Distributing overlap detection into FlashSpore's per-pulse work is more stigmergic — each agent sees only its local context plus brief environmental markers
+**When it runs:** Every 10 pulses (maintenance cycle), after Synthesizer
+
+**What it catches:** Cross-branch duplicates that the Synthesizer can't see. Example: `state-management/local-storage` and `persistence/browser-storage` describe the same concept under different parents. The Synthesizer only checks siblings. The Termite patrols across branches.
+
+**Configuration:** Uses `cross_check` in config.json:
+- `pairs_per_pulse: 2` — How many cross-branch pairs to inspect per maintenance cycle
+- `min_tree_depth: 2` — Minimum depth of nodes to consider (avoids comparing top-level branches)
+
+**Cost:** ~2 LLM calls per maintenance cycle (every 10 pulses) — negligible
 
 ---
 
@@ -295,8 +304,9 @@ What `stig run` reports:
 | `coverage_checks` / `coverage_failures` | Verifier coverage results |
 | `resolver_attempts` / `resolver_resolutions` | Conflict resolution results |
 | `synthesis_merges` | Sibling duplicates merged |
-| `flash_overlaps` | Cross-branch overlaps detected by FlashSpore |
 | `evaporations` | Nodes affected by signal evaporation |
+| `termite_inspections` | Cross-branch pairs inspected by Termite |
+| `termite_detections` | Cross-branch duplicates found by Termite |
 
 ---
 
@@ -330,8 +340,7 @@ Sequential steps:
 4. **Grazer patrol** — Prune dead nodes (untouched 10+ pulses)
 5. **Resolver** — Resolve conflicts if triggered (see triggers below)
 6. **Synthesizer** — Merge stable sibling duplicates
-
-**Note:** Cross-branch overlap detection now happens during normal FlashSpore pulses (not in maintenance). See "Cross-Branch Scent Trails" in Entities.
+7. **Termite** — Cross-branch mound inspection (sample random cross-branch pairs, flag equivalents with conflict)
 
 ### Resolver Triggers
 
@@ -392,8 +401,8 @@ Every `stig run` writes a `telemetry.jsonl` file in the workspace root. Each lin
 | `propagation` | Maintenance | node, need/confidence deltas |
 | `resolver` | Maintenance | node, resolved, conflict before/after |
 | `synthesizer` | Maintenance | target, sources, merged |
-| `flash_overlap` | During pulse | target_path, overlap_path, reason |
 | `evaporation` | Maintenance | nodes_affected, avg_need_delta, avg_conflict_delta |
+| `termite` | Maintenance | node_a, node_b, equivalent, reasoning |
 
 ### Replay Command
 
@@ -412,7 +421,7 @@ stig replay --maintenance
 
 # Agent filter — events by agent type
 stig replay --agent verifier
-stig replay --agent overlap
+stig replay --agent termite
 stig replay --agent evaporation
 ```
 
@@ -487,8 +496,9 @@ stig init "Build a todo app" \
 
 **"Too many duplicates"**
 - Run Synthesizer more frequently
-- Ensure FlashSpore sees `topLevelConcepts` and `branchMap`
-- Check `stig replay --maintenance` for flash_overlap events showing cross-branch overlaps
+- Check `stig replay --agent termite` for cross-branch duplicate detections
+- Check `stig replay --agent synthesizer` for sibling duplicate merges
+- Increase `cross_check.pairs_per_pulse` in config.json for more aggressive cross-branch patrol
 
 **"Conflicts not resolving"**
 - Lower the conflict density trigger (currently 5%)
@@ -578,5 +588,5 @@ stig crystallize --confirm
 | Same node targeted repeatedly | Gravity well | Check depth, nudge signals |
 | No mutations succeeding | All overheated | Wait, or reset signals |
 | Tree won't stabilize | Conflict loop | Run `stig resolve --apply` |
-| Duplicates appearing | Semantic overlap | Run `stig synthesize --confirm` (same-parent siblings) or check `stig replay --maintenance` for flash_overlap events (cross-branch) |
+| Duplicates appearing | Semantic overlap | Run `stig synthesize --confirm` (same-parent siblings) or check `stig replay --agent termite` for cross-branch detections |
 | Empty nodes with high confidence | Scout missed it | `stig scout --fix` |
